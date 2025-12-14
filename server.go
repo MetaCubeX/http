@@ -1545,7 +1545,7 @@ func foreachHeaderElement(v string, fn func(string)) {
 		fn(v)
 		return
 	}
-	for f := range strings.SplitSeq(v, ",") {
+	for _, f := range strings.Split(v, ",") {
 		if f = textproto.TrimString(f); f != "" {
 			fn(f)
 		}

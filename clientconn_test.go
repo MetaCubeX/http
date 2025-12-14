@@ -7,12 +7,13 @@ package http_test
 import (
 	"context"
 	"fmt"
-	"github.com/metacubex/http"
 	"io"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"testing/synctest"
+
+	"github.com/metacubex/http"
 )
 
 func TestTransportNewClientConnRoundTrip(t *testing.T) { run(t, testTransportNewClientConnRoundTrip) }
@@ -100,7 +101,7 @@ func testClientConnReserveAll(t *testing.T, mode testMode) {
 	}
 
 	// Reserve every available concurrency slot on the connection.
-	for i := range available {
+	for i := 0; i < available; i++ {
 		if err := cc.Reserve(); err != nil {
 			t.Fatalf("cc.Reserve() #%v = %v, want nil", i, err)
 		}
@@ -135,7 +136,7 @@ func testClientConnReserveParallel(t *testing.T, mode testMode) {
 	)
 	available := cc.Available()
 	const extra = 2
-	for range available + extra {
+	for i := 0; i < available+extra; i++ {
 		wg.Go(func() {
 			err := cc.Reserve()
 			mu.Lock()
@@ -167,7 +168,7 @@ func testClientConnReserveRelease(t *testing.T, mode testMode) {
 	})
 
 	available := cc.Available()
-	for i := range 2 * available {
+	for i := 0; i < 2*available; i++ {
 		if err := cc.Reserve(); err != nil {
 			t.Fatalf("cc.Reserve() #%v = %v, want nil", i, err)
 		}
@@ -344,7 +345,7 @@ func testClientConnRoundTripBlocks(t *testing.T, mode testMode) {
 	available := cc.Available()
 	var responses atomic.Int64
 	const extra = 2
-	for range available + extra {
+	for i := 0; i < available+extra; i++ {
 		go func() {
 			req, _ := http.NewRequest("GET", mode.Scheme()+"://example.tld/", nil)
 			resp, err := cc.RoundTrip(req)
@@ -365,7 +366,7 @@ func testClientConnRoundTripBlocks(t *testing.T, mode testMode) {
 		t.Errorf("got %v responses, want %v", got, want)
 	}
 
-	for i := range available + extra {
+	for i := 0; i < available+extra; i++ {
 		requestc <- struct{}{}
 		synctest.Wait()
 		if got, want := int(responses.Load()), i+1; got != want {

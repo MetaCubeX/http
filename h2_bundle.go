@@ -27,6 +27,8 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"github.com/metacubex/http/httptrace"
+	"github.com/metacubex/http/internal/httpcommon"
 	"io"
 	"io/fs"
 	"log"
@@ -34,8 +36,6 @@ import (
 	"math/bits"
 	mathrand "math/rand"
 	"net"
-	"github.com/metacubex/http/httptrace"
-	"github.com/metacubex/http/internal/httpcommon"
 	"net/textproto"
 	"net/url"
 	"os"
@@ -8399,7 +8399,11 @@ func (cc *http2ClientConn) availableLocked() int {
 	if !cc.canTakeNewRequestLocked() {
 		return 0
 	}
-	return max(0, int(cc.maxConcurrentStreams)-cc.currentRequestCountLocked())
+	value := int(cc.maxConcurrentStreams) - cc.currentRequestCountLocked()
+	if value > 0 {
+		return value
+	}
+	return 0
 }
 
 // tooIdleLocked reports whether this connection has been been sitting idle

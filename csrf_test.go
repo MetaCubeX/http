@@ -5,11 +5,12 @@
 package http_test
 
 import (
-	"github.com/metacubex/http"
-	"github.com/metacubex/http/httptest"
 	"io"
 	"strings"
 	"testing"
+
+	"github.com/metacubex/http"
+	"github.com/metacubex/http/httptest"
 )
 
 // httptestNewRequest works around https://go.dev/issue/73151.
@@ -274,7 +275,7 @@ func TestCrossOriginProtectionAddingBypassesConcurrently(t *testing.T) {
 	go func() {
 		close(start)
 		defer close(done)
-		for range 10 {
+		for i := 0; i < 10; i++ {
 			w := httptest.NewRecorder()
 			handler.ServeHTTP(w, req)
 		}

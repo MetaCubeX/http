@@ -7,11 +7,12 @@ package httptest
 import (
 	"bytes"
 	"fmt"
-	"github.com/metacubex/http"
 	"io"
 	"net/textproto"
 	"strconv"
 	"strings"
+
+	"github.com/metacubex/http"
 
 	"golang.org/x/net/http/httpguts"
 )
@@ -229,7 +230,7 @@ func (rw *ResponseRecorder) Result() *http.Response {
 	if trailers, ok := rw.snapHeader["Trailer"]; ok {
 		res.Trailer = make(http.Header, len(trailers))
 		for _, k := range trailers {
-			for k := range strings.SplitSeq(k, ",") {
+			for _, k := range strings.Split(k, ",") {
 				k = http.CanonicalHeaderKey(textproto.TrimString(k))
 				if !httpguts.ValidTrailerHeader(k) {
 					// Ignore since forbidden by RFC 7230, section 4.1.2.

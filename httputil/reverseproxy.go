@@ -10,9 +10,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/metacubex/http"
-	"github.com/metacubex/http/httptrace"
-	"github.com/metacubex/http/internal/ascii"
 	"io"
 	"log"
 	"mime"
@@ -23,6 +20,10 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/metacubex/http"
+	"github.com/metacubex/http/httptrace"
+	"github.com/metacubex/http/internal/ascii"
 
 	"golang.org/x/net/http/httpguts"
 )
@@ -554,7 +555,9 @@ func (p *ReverseProxy) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 			rw.WriteHeader(code)
 
 			// Clear headers, it's not automatically done by ResponseWriter.WriteHeader() for 1xx responses
-			clear(h)
+			for k := range h {
+				delete(h, k)
+			}
 			return nil
 		},
 	}
@@ -659,7 +662,7 @@ func shouldPanicOnCopyError(req *http.Request) bool {
 func removeHopByHopHeaders(h http.Header) {
 	// RFC 7230, section 6.1: Remove headers listed in the "Connection" header.
 	for _, f := range h["Connection"] {
-		for sf := range strings.SplitSeq(f, ",") {
+		for _, sf := range strings.Split(f, ",") {
 			if sf = textproto.TrimString(sf); sf != "" {
 				h.Del(sf)
 			}

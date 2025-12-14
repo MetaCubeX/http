@@ -8,14 +8,15 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
-	"github.com/metacubex/http"
-	"github.com/metacubex/http/httptrace"
 	"io"
 	"net"
 	"strings"
 	"sync"
 	"testing"
 	"testing/synctest"
+
+	"github.com/metacubex/http"
+	"github.com/metacubex/http/httptrace"
 )
 
 // Successive requests use the same HTTP/1 connection.
@@ -201,7 +202,7 @@ func TestTransportPoolDisableKeepAlives(t *testing.T) {
 		})
 
 		// Two requests, each uses a separate connection.
-		for range 2 {
+		for i := 0; i < 2; i++ {
 			rt := dt.roundTrip()
 			c := dt.wantDial()
 			c.finish(nil)

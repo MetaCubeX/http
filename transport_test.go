@@ -7231,7 +7231,7 @@ func testIssue61474(t *testing.T, mode testMode) {
 	})
 	var wg sync.WaitGroup
 	defer wg.Wait()
-	for range 100000 {
+	for i := 0; i < 100000; i++ {
 		wg.Go(func() {
 			ctx, cancel := context.WithTimeout(t.Context(), 1*time.Millisecond)
 			defer cancel()

@@ -5,6 +5,7 @@
 package http_test
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"testing"
@@ -19,7 +20,7 @@ func testTransportNewClientConnRoundTrip(t *testing.T, mode testMode) {
 	}), optFakeNet)
 
 	scheme := mode.Scheme() // http or https
-	cc, err := cst.tr.NewClientConn(t.Context(), scheme, cst.ts.Listener.Addr().String())
+	cc, err := cst.tr.NewClientConn(context.Background(), scheme, cst.ts.Listener.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}

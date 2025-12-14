@@ -10,7 +10,6 @@ import (
 	"compress/gzip"
 	"errors"
 	"fmt"
-	"golang.org/x/exp/slices"
 	"io"
 	"io/fs"
 	"mime"
@@ -26,6 +25,8 @@ import (
 	"testing"
 	"testing/fstest"
 	"time"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/metacubex/http"
 	. "github.com/metacubex/http"
@@ -790,10 +791,6 @@ func (f *fakeFileInfo) Mode() fs.FileMode {
 		return 0755 | fs.ModeDir
 	}
 	return 0644
-}
-
-func (f *fakeFileInfo) String() string {
-	return fs.FormatFileInfo(f)
 }
 
 type fakeFile struct {

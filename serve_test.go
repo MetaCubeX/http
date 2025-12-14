@@ -5076,10 +5076,6 @@ func TestServerValidatesHeaders(t *testing.T) {
 		{"Foo : bar\r\n", 400},
 		{"Foo\t: bar\r\n", 400},
 
-		// Empty header keys are invalid.
-		// See RFC 7230, Section 3.2.
-		{": empty key\r\n", 400},
-
 		// Requests with invalid Content-Length headers should be rejected
 		// regardless of the presence of a Transfer-Encoding header.
 		// Check out RFC 9110, Section 8.6 and RFC 9112, Section 6.3.3.

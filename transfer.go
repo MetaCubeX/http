@@ -9,15 +9,16 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"io"
 	"net/textproto"
 	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/exp/maps"
 
 	"github.com/metacubex/http/httptrace"
 	"github.com/metacubex/http/internal"
@@ -319,7 +320,7 @@ func (t *transferWriter) writeHeader(w io.Writer, trace *httptrace.ClientTrace) 
 			keys = append(keys, k)
 		}
 		if len(keys) > 0 {
-			slices.Sort(keys)
+			sort.Strings(keys)
 			// TODO: could do better allocation-wise here, but trailers are rare,
 			// so being lazy for now.
 			if _, err := io.WriteString(w, "Trailer: "+strings.Join(keys, ",")+"\r\n"); err != nil {

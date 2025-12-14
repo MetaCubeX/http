@@ -75,7 +75,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"golang.org/x/exp/slices"
 	"html"
 	"io"
 	"log"
@@ -84,6 +83,7 @@ import (
 	"runtime"
 	"runtime/pprof"
 	"runtime/trace"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -411,8 +411,8 @@ func Index(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	slices.SortFunc(profiles, func(a, b profileEntry) int {
-		return strings.Compare(a.Name, b.Name)
+	sort.Slice(profiles, func(i, j int) bool {
+		return profiles[i].Name < profiles[j].Name
 	})
 
 	if err := indexTmplExecute(w, profiles); err != nil {

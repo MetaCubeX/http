@@ -5,15 +5,15 @@
 package http
 
 import (
-	"github.com/metacubex/http/httptrace"
-	"github.com/metacubex/http/internal/ascii"
-	"golang.org/x/exp/slices"
 	"io"
 	"net/textproto"
+	"sort"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/metacubex/http/httptrace"
+	"github.com/metacubex/http/internal/ascii"
 	"golang.org/x/net/http/httpguts"
 )
 
@@ -176,7 +176,7 @@ func (h Header) sortedKeyValues(exclude map[string]bool) (kvs []keyValues, hs *h
 		}
 	}
 	hs.kvs = kvs
-	slices.SortFunc(hs.kvs, func(a, b keyValues) int { return strings.Compare(a.key, b.key) })
+	sort.Slice(hs.kvs, func(i, j int) bool { return hs.kvs[i].key < hs.kvs[j].key })
 	return kvs, hs
 }
 

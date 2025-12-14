@@ -13,8 +13,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"golang.org/x/exp/maps"
-	"golang.org/x/exp/slices"
 	"io"
 	"log"
 	"math/rand"
@@ -24,12 +22,16 @@ import (
 	urlpkg "net/url"
 	"path"
 	"runtime"
+	"sort"
 	"strconv"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 	_ "unsafe" // for linkname
+
+	"golang.org/x/exp/maps"
+	"golang.org/x/exp/slices"
 
 	"golang.org/x/net/http/httpguts"
 )
@@ -2801,8 +2803,11 @@ func (mux *ServeMux) matchingMethods(host, path string) []string {
 	if !strings.HasSuffix(path, "/") {
 		mux.tree.matchingMethods(host, path+"/", ms)
 	}
-	keys := maps.Keys(ms)
-	slices.Sort(keys)
+	keys := make([]string, 0, len(ms))
+	for k := range ms {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
 	return keys
 }
 

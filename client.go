@@ -19,13 +19,13 @@ import (
 	"log"
 	"net/url"
 	"reflect"
+	"sort"
 	"strings"
 	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/metacubex/http/internal/ascii"
-	"golang.org/x/exp/slices"
 )
 
 // A Client is an HTTP client. Its zero value ([DefaultClient]) is a
@@ -804,7 +804,7 @@ func (c *Client) makeHeadersCopier(ireq *Request) func(req *Request, stripSensit
 						ss = append(ss, c.Name+"="+c.Value)
 					}
 				}
-				slices.Sort(ss) // Ensure deterministic headers
+				sort.Strings(ss) // Ensure deterministic headers
 				ireqhdr.Set("Cookie", strings.Join(ss, "; "))
 			}
 		}

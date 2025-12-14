@@ -1519,7 +1519,7 @@ func (t *Transport) getConn(treq *transportRequest, cm connectMethod) (_ *persis
 	// because a future request may be able to make use of the connection.
 	//
 	// We retain the request context's values.
-	dialCtx, dialCancel := context.WithCancel(context.WithoutCancel(ctx))
+	dialCtx, dialCancel := context.WithCancel(contextWithoutCancel(ctx))
 
 	w := &wantConn{
 		cm:         cm,

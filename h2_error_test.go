@@ -26,7 +26,8 @@ func (e externalStreamError) Error() string {
 
 func TestStreamError(t *testing.T) {
 	streamErr := http2streamError(42, http2ErrCodeProtocol)
-	extStreamErr, ok := errors.AsType[externalStreamError](streamErr)
+	var extStreamErr externalStreamError
+	ok := errors.As(streamErr, &extStreamErr)
 	if !ok {
 		t.Fatalf("errors.AsType failed")
 	}

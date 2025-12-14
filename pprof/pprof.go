@@ -76,7 +76,6 @@ import (
 	"context"
 	"fmt"
 	"html"
-	"internal/profile"
 	"io"
 	"log"
 	"net/url"
@@ -89,6 +88,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/pprof/profile"
 	"github.com/metacubex/http"
 )
 

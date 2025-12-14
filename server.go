@@ -2801,7 +2801,9 @@ func (mux *ServeMux) matchingMethods(host, path string) []string {
 	if !strings.HasSuffix(path, "/") {
 		mux.tree.matchingMethods(host, path+"/", ms)
 	}
-	return slices.Sorted(maps.Keys(ms))
+	keys := maps.Keys(ms)
+	slices.Sort(keys)
+	return keys
 }
 
 // ServeHTTP dispatches the request to the handler whose

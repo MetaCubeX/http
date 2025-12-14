@@ -771,7 +771,8 @@ func testTrailersClientToServer(t *testing.T, mode testMode) {
 		if r.Trailer == nil {
 			io.WriteString(w, "nil Trailer")
 		} else {
-			decl := slices.Sorted(maps.Keys(r.Trailer))
+			decl := maps.Keys(r.Trailer)
+			slices.Sort(decl)
 			fmt.Fprintf(w, "decl: %v, vals: %s, %s",
 				decl,
 				r.Trailer.Get("Client-Trailer-A"),

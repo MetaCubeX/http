@@ -6,10 +6,11 @@ package http
 
 import (
 	"fmt"
-	"golang.org/x/exp/maps"
 	"io"
 	"strings"
 	"testing"
+
+	"golang.org/x/exp/maps"
 
 	"golang.org/x/exp/slices"
 )
@@ -262,7 +263,9 @@ func TestMatchingMethods(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			ms := map[string]bool{}
 			test.tree.matchingMethods(test.host, test.path, ms)
-			got := strings.Join(slices.Sorted(maps.Keys(ms)), ",")
+			keys := maps.Keys(ms)
+			slices.Sort(keys)
+			got := strings.Join(keys, ",")
 			if got != test.want {
 				t.Errorf("got %s, want %s", got, test.want)
 			}

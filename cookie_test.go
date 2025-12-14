@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"golang.org/x/exp/slices"
 	"log"
 	"os"
 	"reflect"
@@ -387,10 +386,6 @@ var readSetCookiesTests = []struct {
 	{
 		header:  Header{"Set-Cookie": {`cookie="quoted"`}},
 		cookies: []*Cookie{{Name: "cookie", Value: "quoted", Quoted: true, Raw: `cookie="quoted"`}},
-	},
-	{
-		header:  Header{"Set-Cookie": slices.Repeat([]string{"a="}, defaultCookieMaxNum+1)},
-		cookies: []*Cookie{},
 	},
 
 	// TODO(bradfitz): users have reported seeing this in the

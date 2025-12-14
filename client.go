@@ -15,8 +15,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/metacubex/http/internal/ascii"
-	"golang.org/x/exp/slices"
 	"io"
 	"log"
 	"net/url"
@@ -25,6 +23,9 @@ import (
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/metacubex/http/internal/ascii"
+	"golang.org/x/exp/slices"
 )
 
 // A Client is an HTTP client. Its zero value ([DefaultClient]) is a
@@ -393,12 +394,15 @@ func setRequestCancel(req *Request, rt RoundTripper, deadline time.Time) (stopTi
 	}
 
 	stopTimerCh := make(chan struct{})
-	stopTimer = sync.OnceFunc(func() {
-		close(stopTimerCh)
-		if cancelCtx != nil {
-			cancelCtx()
-		}
-	})
+	var once sync.Once
+	stopTimer = func() {
+		once.Do(func() {
+			close(stopTimerCh)
+			if cancelCtx != nil {
+				cancelCtx()
+			}
+		})
+	}
 
 	timer := time.NewTimer(time.Until(deadline))
 	var timedOut atomic.Bool

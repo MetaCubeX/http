@@ -2653,7 +2653,8 @@ func runCancelTestTransport(t *testing.T, mode testMode, f func(t *testing.T, te
 // runCancelTestChannel uses Request.Cancel.
 func runCancelTestChannel(t *testing.T, mode testMode, f func(t *testing.T, test cancelTest)) {
 	cancelc := make(chan struct{})
-	cancelOnce := sync.OnceFunc(func() { close(cancelc) })
+	var once sync.Once
+	cancelOnce := func() { once.Do(func() { close(cancelc) }) }
 	f(t, cancelTest{
 		mode: mode,
 		newReq: func(req *Request) *Request {
@@ -5198,7 +5199,8 @@ func TestTransportReturnsPeekError(t *testing.T) {
 	errValue := errors.New("specific error value")
 
 	wrote := make(chan struct{})
-	wroteOnce := sync.OnceFunc(func() { close(wrote) })
+	var once sync.Once
+	wroteOnce := func() { once.Do(func() { close(wrote) }) }
 
 	tr := &Transport{
 		Dial: func(network, addr string) (net.Conn, error) {

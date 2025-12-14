@@ -7,10 +7,10 @@ package http
 import (
 	"errors"
 	"fmt"
+	"github.com/metacubex/http/internal/ascii"
 	"internal/godebug"
 	"log"
 	"net"
-	"net/http/internal/ascii"
 	"net/textproto"
 	"strconv"
 	"strings"

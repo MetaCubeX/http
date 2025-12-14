@@ -8,8 +8,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/metacubex/http/httptrace"
 	"net"
-	"net/http/httptrace"
 	"net/url"
 	"sync"
 )

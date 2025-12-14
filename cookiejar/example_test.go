@@ -6,10 +6,10 @@ package cookiejar_test
 
 import (
 	"fmt"
+	"github.com/metacubex/http"
+	"github.com/metacubex/http/cookiejar"
+	"github.com/metacubex/http/httptest"
 	"log"
-	"net/http"
-	"net/http/cookiejar"
-	"net/http/httptest"
 	"net/url"
 )
 

@@ -5,10 +5,10 @@
 package http_test
 
 import (
+	"github.com/metacubex/http"
 	"io"
 	"io/fs"
 	"log"
-	"net/http"
 	"strings"
 )
 

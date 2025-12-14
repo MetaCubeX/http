@@ -6,9 +6,9 @@ package httptrace_test
 
 import (
 	"fmt"
+	"github.com/metacubex/http"
+	"github.com/metacubex/http/httptrace"
 	"log"
-	"net/http"
-	"net/http/httptrace"
 )
 
 func Example() {

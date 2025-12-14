@@ -5,9 +5,9 @@
 package http
 
 import (
+	"github.com/metacubex/http/httptrace"
+	"github.com/metacubex/http/internal/ascii"
 	"io"
-	"net/http/httptrace"
-	"net/http/internal/ascii"
 	"net/textproto"
 	"slices"
 	"strings"

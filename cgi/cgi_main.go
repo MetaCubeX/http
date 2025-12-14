@@ -6,9 +6,9 @@ package cgi
 
 import (
 	"fmt"
+	"github.com/metacubex/http"
 	"io"
 	"maps"
-	"net/http"
 	"os"
 	"path"
 	"slices"

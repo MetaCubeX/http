@@ -6,9 +6,9 @@ package httptest
 
 import (
 	"bufio"
+	"github.com/metacubex/http"
 	"io"
 	"net"
-	"net/http"
 	"sync"
 	"testing"
 )

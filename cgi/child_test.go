@@ -9,8 +9,8 @@ package cgi
 import (
 	"bufio"
 	"bytes"
-	"net/http"
-	"net/http/httptest"
+	"github.com/metacubex/http"
+	"github.com/metacubex/http/httptest"
 	"strings"
 	"testing"
 )

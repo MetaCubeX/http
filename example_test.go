@@ -7,9 +7,9 @@ package http_test
 import (
 	"context"
 	"fmt"
+	"github.com/metacubex/http"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 	"time"

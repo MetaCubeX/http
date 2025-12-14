@@ -17,10 +17,10 @@ package cgi
 import (
 	"bufio"
 	"fmt"
+	"github.com/metacubex/http"
 	"io"
 	"log"
 	"net"
-	"net/http"
 	"net/textproto"
 	"os"
 	"os/exec"

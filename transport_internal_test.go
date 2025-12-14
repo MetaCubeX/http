@@ -11,9 +11,9 @@ import (
 	"context"
 	"crypto/tls"
 	"errors"
+	"github.com/metacubex/http/internal/testcert"
 	"io"
 	"net"
-	"net/http/internal/testcert"
 	"strings"
 	"testing"
 )

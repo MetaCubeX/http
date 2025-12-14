@@ -8,7 +8,7 @@ package cookiejar
 
 import (
 	"fmt"
-	"net/http/internal/ascii"
+	"github.com/metacubex/http/internal/ascii"
 	"strings"
 	"unicode/utf8"
 )

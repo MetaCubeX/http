@@ -15,10 +15,10 @@ package main
 import (
 	"bytes"
 	"fmt"
+	"github.com/metacubex/http"
+	"github.com/metacubex/http/httptest"
+	"github.com/metacubex/http/pprof"
 	"log"
-	"net/http"
-	"net/http/httptest"
-	"net/http/pprof"
 	"runtime"
 )
 

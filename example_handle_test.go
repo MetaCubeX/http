@@ -6,8 +6,8 @@ package http_test
 
 import (
 	"fmt"
+	"github.com/metacubex/http"
 	"log"
-	"net/http"
 	"sync"
 )
 

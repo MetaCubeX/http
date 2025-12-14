@@ -9,8 +9,8 @@ package http
 import (
 	"errors"
 	"fmt"
+	"github.com/metacubex/http/internal/ascii"
 	"io"
-	"net/http/internal/ascii"
 	"net/url"
 	"strconv"
 	"strings"

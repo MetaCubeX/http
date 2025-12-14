@@ -6,9 +6,9 @@ package http_test
 
 import (
 	"fmt"
+	"github.com/metacubex/http"
 	"io"
 	"log"
-	"net/http"
 	"os"
 	"runtime"
 	"slices"

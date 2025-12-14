@@ -7,8 +7,8 @@ package http_test
 import (
 	"context"
 	"fmt"
+	"github.com/metacubex/http"
 	"io"
-	"net/http"
 	"sync"
 	"sync/atomic"
 	"testing"

@@ -6,11 +6,11 @@ package httputil_test
 
 import (
 	"fmt"
+	"github.com/metacubex/http"
+	"github.com/metacubex/http/httptest"
+	"github.com/metacubex/http/httputil"
 	"io"
 	"log"
-	"net/http"
-	"net/http/httptest"
-	"net/http/httputil"
 	"net/url"
 	"strings"
 )

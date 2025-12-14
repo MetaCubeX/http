@@ -6,7 +6,7 @@ package cookiejar
 
 import (
 	"fmt"
-	"net/http"
+	"github.com/metacubex/http"
 	"net/url"
 	"slices"
 	"strings"

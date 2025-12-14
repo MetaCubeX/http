@@ -7,7 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http/httptrace"
+	"github.com/metacubex/http/httptrace"
 	"net/textproto"
 	"net/url"
 	"sort"

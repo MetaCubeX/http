@@ -8,8 +8,8 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/metacubex/http"
 	"io"
-	"net/http"
 	"testing"
 )
 

@@ -7,9 +7,9 @@ package http_test
 import (
 	"bytes"
 	"fmt"
+	. "github.com/metacubex/http"
 	"io"
 	"log"
-	. "net/http"
 	"slices"
 	"strconv"
 	"strings"

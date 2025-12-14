@@ -7,8 +7,8 @@ package httptest
 import (
 	"bytes"
 	"fmt"
+	"github.com/metacubex/http"
 	"io"
-	"net/http"
 	"net/textproto"
 	"strconv"
 	"strings"

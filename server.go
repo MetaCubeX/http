@@ -13,7 +13,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"internal/godebug"
 	"io"
 	"log"
 	"maps"
@@ -2573,10 +2572,9 @@ func RedirectHandler(url string, code int) Handler {
 //     This change mostly affects how paths with %2F escapes adjacent to slashes are treated.
 //     See https://go.dev/issue/21955 for details.
 type ServeMux struct {
-	mu     sync.RWMutex
-	tree   routingNode
-	index  routingIndex
-	mux121 serveMux121 // used only when GODEBUG=httpmuxgo121=1
+	mu    sync.RWMutex
+	tree  routingNode
+	index routingIndex
 }
 
 // NewServeMux allocates and returns a new [ServeMux].
@@ -2645,9 +2643,6 @@ func stripHostPort(h string) string {
 // populate named path wildcards, so r.PathValue will always return
 // the empty string.
 func (mux *ServeMux) Handler(r *Request) (h Handler, pattern string) {
-	if use121 {
-		return mux.mux121.findHandler(r)
-	}
 	h, p, _, _ := mux.findHandler(r)
 	return h, p
 }
@@ -2820,11 +2815,7 @@ func (mux *ServeMux) ServeHTTP(w ResponseWriter, r *Request) {
 		return
 	}
 	var h Handler
-	if use121 {
-		h, _ = mux.mux121.findHandler(r)
-	} else {
-		h, r.Pattern, r.pat, r.matches = mux.findHandler(r)
-	}
+	h, r.Pattern, r.pat, r.matches = mux.findHandler(r)
 	h.ServeHTTP(w, r)
 }
 
@@ -2837,11 +2828,7 @@ func (mux *ServeMux) ServeHTTP(w ResponseWriter, r *Request) {
 //
 // See [ServeMux] for details on valid patterns and conflict rules.
 func (mux *ServeMux) Handle(pattern string, handler Handler) {
-	if use121 {
-		mux.mux121.handle(pattern, handler)
-	} else {
-		mux.register(pattern, handler)
-	}
+	mux.register(pattern, handler)
 }
 
 // HandleFunc registers the handler function for the given pattern.
@@ -2850,31 +2837,19 @@ func (mux *ServeMux) Handle(pattern string, handler Handler) {
 //
 // See [ServeMux] for details on valid patterns and conflict rules.
 func (mux *ServeMux) HandleFunc(pattern string, handler func(ResponseWriter, *Request)) {
-	if use121 {
-		mux.mux121.handleFunc(pattern, handler)
-	} else {
-		mux.register(pattern, HandlerFunc(handler))
-	}
+	mux.register(pattern, HandlerFunc(handler))
 }
 
 // Handle registers the handler for the given pattern in [DefaultServeMux].
 // The documentation for [ServeMux] explains how patterns are matched.
 func Handle(pattern string, handler Handler) {
-	if use121 {
-		DefaultServeMux.mux121.handle(pattern, handler)
-	} else {
-		DefaultServeMux.register(pattern, handler)
-	}
+	DefaultServeMux.register(pattern, handler)
 }
 
 // HandleFunc registers the handler function for the given pattern in [DefaultServeMux].
 // The documentation for [ServeMux] explains how patterns are matched.
 func HandleFunc(pattern string, handler func(ResponseWriter, *Request)) {
-	if use121 {
-		DefaultServeMux.mux121.handleFunc(pattern, handler)
-	} else {
-		DefaultServeMux.register(pattern, HandlerFunc(handler))
-	}
+	DefaultServeMux.register(pattern, HandlerFunc(handler))
 }
 
 func (mux *ServeMux) register(pattern string, handler Handler) {
@@ -3513,13 +3488,6 @@ func (s *Server) protocols() Protocols {
 	_, hasH2 := s.TLSNextProto["h2"]
 	http2Disabled := s.TLSNextProto != nil && !hasH2
 
-	// If GODEBUG=http2server=0, then HTTP/2 is disabled unless
-	// the user has manually added an "h2" entry to TLSNextProto
-	// (probably by using x/net/http2 directly).
-	if http2server.Value() == "0" && !hasH2 {
-		http2Disabled = true
-	}
-
 	var p Protocols
 	p.SetHTTP1(true) // default always includes HTTP/1
 	if !http2Disabled {
@@ -3746,8 +3714,6 @@ func (s *Server) onceSetNextProtoDefaults_Serve() {
 	}
 }
 
-var http2server = godebug.New("http2server")
-
 // onceSetNextProtoDefaults configures HTTP/2, if the user hasn't
 // configured otherwise. (by setting s.TLSNextProto non-nil)
 // It must only be called via s.nextProtoOnce (use s.setupHTTP2_*).
@@ -3757,10 +3723,6 @@ func (s *Server) onceSetNextProtoDefaults() {
 	}
 	p := s.protocols()
 	if !p.HTTP2() && !p.UnencryptedHTTP2() {
-		return
-	}
-	if http2server.Value() == "0" {
-		http2server.IncNonDefault()
 		return
 	}
 	if _, ok := s.TLSNextProto["h2"]; ok {

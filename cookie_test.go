@@ -258,7 +258,6 @@ func TestAddCookie(t *testing.T) {
 var readSetCookiesTests = []struct {
 	header  Header
 	cookies []*Cookie
-	godebug string
 }{
 	{
 		header:  Header{"Set-Cookie": {"Cookie-1=v$1"}},
@@ -393,21 +392,6 @@ var readSetCookiesTests = []struct {
 		header:  Header{"Set-Cookie": slices.Repeat([]string{"a="}, defaultCookieMaxNum+1)},
 		cookies: []*Cookie{},
 	},
-	{
-		header:  Header{"Set-Cookie": slices.Repeat([]string{"a="}, 10)},
-		cookies: []*Cookie{},
-		godebug: "httpcookiemaxnum=5",
-	},
-	{
-		header:  Header{"Set-Cookie": strings.Split(strings.Repeat(";a=", defaultCookieMaxNum+1)[1:], ";")},
-		cookies: slices.Repeat([]*Cookie{{Name: "a", Value: "", Quoted: false, Raw: "a="}}, defaultCookieMaxNum+1),
-		godebug: "httpcookiemaxnum=0",
-	},
-	{
-		header:  Header{"Set-Cookie": strings.Split(strings.Repeat(";a=", defaultCookieMaxNum+1)[1:], ";")},
-		cookies: slices.Repeat([]*Cookie{{Name: "a", Value: "", Quoted: false, Raw: "a="}}, defaultCookieMaxNum+1),
-		godebug: fmt.Sprintf("httpcookiemaxnum=%v", defaultCookieMaxNum+1),
-	},
 
 	// TODO(bradfitz): users have reported seeing this in the
 	// wild, but do browsers handle it? RFC 6265 just says "don't
@@ -426,7 +410,6 @@ func toJSON(v any) string {
 
 func TestReadSetCookies(t *testing.T) {
 	for i, tt := range readSetCookiesTests {
-		t.Setenv("GODEBUG", tt.godebug)
 		for n := 0; n < 2; n++ { // to verify readSetCookies doesn't mutate its input
 			c := readSetCookies(tt.header)
 			if !reflect.DeepEqual(c, tt.cookies) {
@@ -440,7 +423,6 @@ var readCookiesTests = []struct {
 	header  Header
 	filter  string
 	cookies []*Cookie
-	godebug string
 }{
 	{
 		header: Header{"Cookie": {"Cookie-1=v$1", "c2=v2"}},
@@ -499,26 +481,10 @@ var readCookiesTests = []struct {
 		header:  Header{"Cookie": {strings.Repeat(";a=", defaultCookieMaxNum+1)[1:]}},
 		cookies: []*Cookie{},
 	},
-	{
-		header:  Header{"Cookie": slices.Repeat([]string{"a="}, 10)},
-		cookies: []*Cookie{},
-		godebug: "httpcookiemaxnum=5",
-	},
-	{
-		header:  Header{"Cookie": {strings.Repeat(";a=", defaultCookieMaxNum+1)[1:]}},
-		cookies: slices.Repeat([]*Cookie{{Name: "a", Value: "", Quoted: false}}, defaultCookieMaxNum+1),
-		godebug: "httpcookiemaxnum=0",
-	},
-	{
-		header:  Header{"Cookie": slices.Repeat([]string{"a="}, defaultCookieMaxNum+1)},
-		cookies: slices.Repeat([]*Cookie{{Name: "a", Value: "", Quoted: false}}, defaultCookieMaxNum+1),
-		godebug: fmt.Sprintf("httpcookiemaxnum=%v", defaultCookieMaxNum+1),
-	},
 }
 
 func TestReadCookies(t *testing.T) {
 	for i, tt := range readCookiesTests {
-		t.Setenv("GODEBUG", tt.godebug)
 		for n := 0; n < 2; n++ { // to verify readCookies doesn't mutate its input
 			c := readCookies(tt.header, tt.filter)
 			if !reflect.DeepEqual(c, tt.cookies) {
@@ -735,7 +701,6 @@ func TestParseCookie(t *testing.T) {
 		line    string
 		cookies []*Cookie
 		err     error
-		godebug string
 	}{
 		{
 			line:    "Cookie-1=v$1",
@@ -773,24 +738,8 @@ func TestParseCookie(t *testing.T) {
 			line: strings.Repeat(";a=", defaultCookieMaxNum+1)[1:],
 			err:  errCookieNumLimitExceeded,
 		},
-		{
-			line:    strings.Repeat(";a=", 10)[1:],
-			err:     errCookieNumLimitExceeded,
-			godebug: "httpcookiemaxnum=5",
-		},
-		{
-			line:    strings.Repeat(";a=", defaultCookieMaxNum+1)[1:],
-			cookies: slices.Repeat([]*Cookie{{Name: "a", Value: "", Quoted: false}}, defaultCookieMaxNum+1),
-			godebug: "httpcookiemaxnum=0",
-		},
-		{
-			line:    strings.Repeat(";a=", defaultCookieMaxNum+1)[1:],
-			cookies: slices.Repeat([]*Cookie{{Name: "a", Value: "", Quoted: false}}, defaultCookieMaxNum+1),
-			godebug: fmt.Sprintf("httpcookiemaxnum=%v", defaultCookieMaxNum+1),
-		},
 	}
 	for i, tt := range tests {
-		t.Setenv("GODEBUG", tt.godebug)
 		gotCookies, gotErr := ParseCookie(tt.line)
 		if !errors.Is(gotErr, tt.err) {
 			t.Errorf("#%d ParseCookie got error %v, want error %v", i, gotErr, tt.err)

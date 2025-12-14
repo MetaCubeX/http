@@ -77,7 +77,6 @@ import (
 	"fmt"
 	"github.com/metacubex/http"
 	"html"
-	"internal/godebug"
 	"internal/goexperiment"
 	"internal/profile"
 	"io"
@@ -94,10 +93,7 @@ import (
 )
 
 func init() {
-	prefix := ""
-	if godebug.New("httpmuxgo121").Value() != "1" {
-		prefix = "GET "
-	}
+	prefix := "GET "
 	http.HandleFunc(prefix+"/debug/pprof/", Index)
 	http.HandleFunc(prefix+"/debug/pprof/cmdline", Cmdline)
 	http.HandleFunc(prefix+"/debug/pprof/profile", Profile)

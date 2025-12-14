@@ -7,17 +7,15 @@ package http
 import (
 	"errors"
 	"fmt"
-	"github.com/metacubex/http/internal/ascii"
-	"internal/godebug"
 	"log"
 	"net"
 	"net/textproto"
 	"strconv"
 	"strings"
 	"time"
-)
 
-var httpcookiemaxnum = godebug.New("httpcookiemaxnum")
+	"github.com/metacubex/http/internal/ascii"
+)
 
 // A Cookie represents an HTTP cookie as sent in the Set-Cookie header of an
 // HTTP response or the Cookie header of an HTTP request.
@@ -72,16 +70,6 @@ const defaultCookieMaxNum = 3000
 
 func cookieNumWithinMax(cookieNum int) bool {
 	withinDefaultMax := cookieNum <= defaultCookieMaxNum
-	if httpcookiemaxnum.Value() == "" {
-		return withinDefaultMax
-	}
-	if customMax, err := strconv.Atoi(httpcookiemaxnum.Value()); err == nil {
-		withinCustomMax := customMax == 0 || cookieNum <= customMax
-		if withinDefaultMax != withinCustomMax {
-			httpcookiemaxnum.IncNonDefault()
-		}
-		return withinCustomMax
-	}
 	return withinDefaultMax
 }
 

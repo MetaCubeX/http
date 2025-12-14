@@ -9,10 +9,6 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"github.com/metacubex/http/httptrace"
-	"github.com/metacubex/http/internal"
-	"github.com/metacubex/http/internal/ascii"
-	"internal/godebug"
 	"io"
 	"maps"
 	"net/textproto"
@@ -22,6 +18,10 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/metacubex/http/httptrace"
+	"github.com/metacubex/http/internal"
+	"github.com/metacubex/http/internal/ascii"
 
 	"golang.org/x/net/http/httpguts"
 )
@@ -1042,8 +1042,6 @@ func (bl bodyLocked) Read(p []byte) (n int, err error) {
 	return bl.b.readLocked(p)
 }
 
-var httplaxcontentlength = godebug.New("httplaxcontentlength")
-
 // parseContentLength checks that the header is valid and then trims
 // whitespace. It returns -1 if no value is set otherwise the value
 // if it's >= 0.
@@ -1056,10 +1054,6 @@ func parseContentLength(clHeaders []string) (int64, error) {
 	// The Content-Length must be a valid numeric value.
 	// See: https://datatracker.ietf.org/doc/html/rfc2616/#section-14.13
 	if cl == "" {
-		if httplaxcontentlength.Value() == "1" {
-			httplaxcontentlength.IncNonDefault()
-			return -1, nil
-		}
 		return 0, badStringError("invalid empty Content-Length", cl)
 	}
 	n, err := strconv.ParseUint(cl, 10, 63)

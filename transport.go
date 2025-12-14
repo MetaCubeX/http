@@ -18,9 +18,6 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
-	"github.com/metacubex/http/httptrace"
-	"github.com/metacubex/http/internal/ascii"
-	"internal/godebug"
 	"io"
 	"log"
 	"maps"
@@ -33,6 +30,9 @@ import (
 	"sync/atomic"
 	"time"
 	_ "unsafe"
+
+	"github.com/metacubex/http/httptrace"
+	"github.com/metacubex/http/internal/ascii"
 
 	"golang.org/x/net/http/httpguts"
 	"golang.org/x/net/http/httpproxy"
@@ -394,16 +394,10 @@ func (t *Transport) hasCustomTLSDialer() bool {
 	return t.DialTLS != nil || t.DialTLSContext != nil
 }
 
-var http2client = godebug.New("http2client")
-
 // onceSetNextProtoDefaults initializes TLSNextProto.
 // It must be called via t.nextProtoOnce.Do.
 func (t *Transport) onceSetNextProtoDefaults() {
 	t.tlsNextProtoWasNil = (t.TLSNextProto == nil)
-	if http2client.Value() == "0" {
-		http2client.IncNonDefault()
-		return
-	}
 
 	// If they've already configured http2 with
 	// golang.org/x/net/http2 instead of the bundled copy, try to
@@ -481,7 +475,6 @@ func (t *Transport) protocols() Protocols {
 		// Transport.Protocols.SetHTTP2(true) so we don't surprise them
 		// by modifying their tls.Config. Issue 14275.
 		// However, if ForceAttemptHTTP2 is true, it overrides the above checks.
-	case http2client.Value() == "0":
 	default:
 		p.SetHTTP2(true)
 	}

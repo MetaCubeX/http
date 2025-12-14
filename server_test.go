@@ -191,36 +191,28 @@ func TestExactMatch(t *testing.T) {
 
 func TestEscapedPathsAndPatterns(t *testing.T) {
 	matches := []struct {
-		pattern  string
-		paths    []string // paths that match the pattern
-		paths121 []string // paths that matched the pattern in Go 1.21.
+		pattern string
+		paths   []string // paths that match the pattern
 	}{
 		{
 			"/a", // this pattern matches a path that unescapes to "/a"
-			[]string{"/a", "/%61"},
 			[]string{"/a", "/%61"},
 		},
 		{
 			"/%62", // patterns are unescaped by segment; matches paths that unescape to "/b"
 			[]string{"/b", "/%62"},
-			[]string{"/%2562"}, // In 1.21, patterns were not unescaped but paths were.
 		},
 		{
 			"/%7B/%7D", // the only way to write a pattern that matches '{' or '}'
 			[]string{"/{/}", "/%7b/}", "/{/%7d", "/%7B/%7D"},
-			[]string{"/%257B/%257D"}, // In 1.21, patterns were not unescaped.
 		},
 		{
 			"/%x", // patterns that do not unescape are left unchanged
 			[]string{"/%25x"},
-			[]string{"/%25x"},
 		},
 	}
 
-	run := func(t *testing.T, test121 bool) {
-		defer func(u bool) { use121 = u }(use121)
-		use121 = test121
-
+	run := func(t *testing.T) {
 		mux := NewServeMux()
 		for _, m := range matches {
 			mux.HandleFunc(m.pattern, func(w ResponseWriter, r *Request) {})
@@ -228,9 +220,6 @@ func TestEscapedPathsAndPatterns(t *testing.T) {
 
 		for _, m := range matches {
 			paths := m.paths
-			if use121 {
-				paths = m.paths121
-			}
 			for _, p := range paths {
 				u, err := url.ParseRequestURI(p)
 				if err != nil {
@@ -247,8 +236,7 @@ func TestEscapedPathsAndPatterns(t *testing.T) {
 		}
 	}
 
-	t.Run("latest", func(t *testing.T) { run(t, false) })
-	t.Run("1.21", func(t *testing.T) { run(t, true) })
+	t.Run("latest", func(t *testing.T) { run(t) })
 }
 
 func TestCleanPath(t *testing.T) {

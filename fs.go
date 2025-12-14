@@ -22,6 +22,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	filepathlite "github.com/metacubex/http/internal/filepath"
 )
 
 // A Dir implements [FileSystem] using the native file system restricted to a
@@ -78,7 +80,7 @@ func (d Dir) Open(name string) (File, error) {
 	if path == "" {
 		path = "."
 	}
-	path, err := filepath.Localize(path)
+	path, err := filepathlite.Localize(path)
 	if err != nil {
 		return nil, errInvalidUnsafePath
 	}

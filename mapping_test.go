@@ -5,11 +5,12 @@
 package http
 
 import (
-	"cmp"
 	"fmt"
-	"slices"
+	"sort"
 	"strconv"
 	"testing"
+
+	"golang.org/x/exp/slices"
 )
 
 func TestMapping(t *testing.T) {
@@ -55,9 +56,7 @@ func TestMappingEachPair(t *testing.T) {
 		got = append(got, entry[int, string]{k, v})
 		return true
 	})
-	slices.SortFunc(got, func(e1, e2 entry[int, string]) int {
-		return cmp.Compare(e1.key, e2.key)
-	})
+	sort.Slice(got, func(i, j int) bool { return got[i].key < got[j].key })
 	if !slices.Equal(got, want) {
 		t.Errorf("got %v, want %v", got, want)
 	}

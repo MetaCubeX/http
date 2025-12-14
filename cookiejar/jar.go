@@ -6,7 +6,6 @@
 package cookiejar
 
 import (
-	"cmp"
 	"errors"
 	"fmt"
 	"github.com/metacubex/http"
@@ -14,7 +13,7 @@ import (
 	"net"
 	"net/netip"
 	"net/url"
-	"slices"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -244,14 +243,15 @@ func (j *Jar) cookies(u *url.URL, now time.Time) (cookies []*http.Cookie) {
 
 	// sort according to RFC 6265 section 5.4 point 2: by longest
 	// path and then by earliest creation time.
-	slices.SortFunc(selected, func(a, b entry) int {
-		if r := cmp.Compare(b.Path, a.Path); r != 0 {
-			return r
+	sort.Slice(selected, func(i, j int) bool {
+		s := selected
+		if len(s[i].Path) != len(s[j].Path) {
+			return len(s[i].Path) > len(s[j].Path)
 		}
-		if r := a.Creation.Compare(b.Creation); r != 0 {
-			return r
+		if ret := s[i].Creation.Compare(s[j].Creation); ret != 0 {
+			return ret < 0
 		}
-		return cmp.Compare(a.seqNum, b.seqNum)
+		return s[i].seqNum < s[j].seqNum
 	})
 	for _, e := range selected {
 		cookies = append(cookies, &http.Cookie{Name: e.Name, Value: e.Value, Quoted: e.Quoted})

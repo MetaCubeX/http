@@ -7,8 +7,8 @@
 package http
 
 import (
+	"golang.org/x/exp/slices"
 	"net/url"
-	"slices"
 	"testing"
 )
 

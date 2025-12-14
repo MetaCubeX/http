@@ -16,6 +16,7 @@ import (
 	"github.com/metacubex/http"
 	. "github.com/metacubex/http"
 	"github.com/metacubex/http/httptest"
+	"golang.org/x/exp/slices"
 	"io"
 	"math"
 	"mime/multipart"
@@ -23,7 +24,6 @@ import (
 	"os"
 	"reflect"
 	"regexp"
-	"slices"
 	"strings"
 	"testing"
 )

@@ -6,7 +6,7 @@ package http
 
 import (
 	"fmt"
-	"slices"
+	"golang.org/x/exp/slices"
 	"strings"
 	"testing"
 )

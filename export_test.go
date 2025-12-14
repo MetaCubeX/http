@@ -10,9 +10,9 @@ package http
 import (
 	"context"
 	"fmt"
+	"golang.org/x/exp/slices"
 	"net"
 	"net/url"
-	"slices"
 	"sync"
 	"testing"
 	"time"

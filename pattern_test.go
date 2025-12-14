@@ -5,7 +5,7 @@
 package http
 
 import (
-	"slices"
+	"golang.org/x/exp/slices"
 	"strings"
 	"testing"
 )

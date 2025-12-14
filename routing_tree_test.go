@@ -6,12 +6,12 @@ package http
 
 import (
 	"fmt"
+	"golang.org/x/exp/maps"
 	"io"
-	"maps"
 	"strings"
 	"testing"
 
-	"slices"
+	"golang.org/x/exp/slices"
 )
 
 func TestRoutingFirstSegment(t *testing.T) {

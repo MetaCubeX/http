@@ -7,11 +7,11 @@ package http_test
 import (
 	"fmt"
 	"github.com/metacubex/http"
+	"golang.org/x/exp/slices"
 	"io"
 	"log"
 	"os"
 	"runtime"
-	"slices"
 	"strings"
 	"testing"
 	"time"

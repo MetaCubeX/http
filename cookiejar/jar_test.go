@@ -7,8 +7,8 @@ package cookiejar
 import (
 	"fmt"
 	"github.com/metacubex/http"
+	"golang.org/x/exp/slices"
 	"net/url"
-	"slices"
 	"strings"
 	"testing"
 	"time"

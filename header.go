@@ -7,9 +7,9 @@ package http
 import (
 	"github.com/metacubex/http/httptrace"
 	"github.com/metacubex/http/internal/ascii"
+	"golang.org/x/exp/slices"
 	"io"
 	"net/textproto"
-	"slices"
 	"strings"
 	"sync"
 	"time"

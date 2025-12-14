@@ -9,7 +9,6 @@ package httptrace
 import (
 	"context"
 	"crypto/tls"
-	"internal/nettrace"
 	"net"
 	"net/textproto"
 	"reflect"
@@ -39,31 +38,6 @@ func WithClientTrace(ctx context.Context, trace *ClientTrace) context.Context {
 	trace.compose(old)
 
 	ctx = context.WithValue(ctx, clientEventContextKey{}, trace)
-	if trace.hasNetHooks() {
-		nt := &nettrace.Trace{
-			ConnectStart: trace.ConnectStart,
-			ConnectDone:  trace.ConnectDone,
-		}
-		if trace.DNSStart != nil {
-			nt.DNSStart = func(name string) {
-				trace.DNSStart(DNSStartInfo{Host: name})
-			}
-		}
-		if trace.DNSDone != nil {
-			nt.DNSDone = func(netIPs []any, coalesced bool, err error) {
-				addrs := make([]net.IPAddr, len(netIPs))
-				for i, ip := range netIPs {
-					addrs[i] = ip.(net.IPAddr)
-				}
-				trace.DNSDone(DNSDoneInfo{
-					Addrs:     addrs,
-					Coalesced: coalesced,
-					Err:       err,
-				})
-			}
-		}
-		ctx = context.WithValue(ctx, nettrace.TraceKey{}, nt)
-	}
 	return ctx
 }
 
@@ -113,24 +87,6 @@ type ClientTrace struct {
 	// for "100 Continue" responses, even if Got100Continue is also defined.
 	// If it returns an error, the client request is aborted with that error value.
 	Got1xxResponse func(code int, header textproto.MIMEHeader) error
-
-	// DNSStart is called when a DNS lookup begins.
-	DNSStart func(DNSStartInfo)
-
-	// DNSDone is called when a DNS lookup ends.
-	DNSDone func(DNSDoneInfo)
-
-	// ConnectStart is called when a new connection's Dial begins.
-	// If net.Dialer.DualStack (IPv6 "Happy Eyeballs") support is
-	// enabled, this may be called multiple times.
-	ConnectStart func(network, addr string)
-
-	// ConnectDone is called when a new connection's Dial
-	// completes. The provided err indicates whether the
-	// connection completed successfully.
-	// If net.Dialer.DualStack ("Happy Eyeballs") support is
-	// enabled, this may be called multiple times.
-	ConnectDone func(network, addr string, err error)
 
 	// TLSHandshakeStart is called when the TLS handshake is started. When
 	// connecting to an HTTPS site via an HTTP proxy, the handshake happens
@@ -224,13 +180,6 @@ type DNSDoneInfo struct {
 	// Coalesced is whether the Addrs were shared with another
 	// caller who was doing the same DNS lookup concurrently.
 	Coalesced bool
-}
-
-func (t *ClientTrace) hasNetHooks() bool {
-	if t == nil {
-		return false
-	}
-	return t.DNSStart != nil || t.DNSDone != nil || t.ConnectStart != nil || t.ConnectDone != nil
 }
 
 // GotConnInfo is the argument to the [ClientTrace.GotConn] function and

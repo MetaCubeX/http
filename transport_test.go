@@ -26,7 +26,6 @@ import (
 	"github.com/metacubex/http/httputil"
 	"github.com/metacubex/http/internal/testcert"
 	"go/token"
-	"internal/nettrace"
 	"internal/synctest"
 	"io"
 	"log"
@@ -5015,11 +5014,9 @@ func testTransportReuseConnection_Gzip(t *testing.T, mode testMode, chunked bool
 	c := ts.Client()
 
 	trace := &httptrace.ClientTrace{
-		GetConn:      func(hostPort string) { t.Logf("GetConn(%q)", hostPort) },
-		GotConn:      func(ci httptrace.GotConnInfo) { t.Logf("GotConn(%+v)", ci) },
-		PutIdleConn:  func(err error) { t.Logf("PutIdleConn(%v)", err) },
-		ConnectStart: func(network, addr string) { t.Logf("ConnectStart(%q, %q)", network, addr) },
-		ConnectDone:  func(network, addr string, err error) { t.Logf("ConnectDone(%q, %q, %v)", network, addr, err) },
+		GetConn:     func(hostPort string) { t.Logf("GetConn(%q)", hostPort) },
+		GotConn:     func(ci httptrace.GotConnInfo) { t.Logf("GotConn(%+v)", ci) },
+		PutIdleConn: func(err error) { t.Logf("PutIdleConn(%v)", err) },
 	}
 	ctx := httptrace.WithClientTrace(context.Background(), trace)
 
@@ -5131,14 +5128,7 @@ func testTransportEventTrace(t *testing.T, mode testMode, noHooks bool) {
 		t.Fatal(err)
 	}
 
-	// Install a fake DNS server.
-	ctx := context.WithValue(context.Background(), nettrace.LookupIPAltResolverKey{}, func(ctx context.Context, network, host string) ([]net.IPAddr, error) {
-		if host != "dns-is-faked.golang" {
-			t.Errorf("unexpected DNS host lookup for %q/%q", network, host)
-			return nil, nil
-		}
-		return []net.IPAddr{{IP: net.ParseIP(ip)}}, nil
-	})
+	ctx := context.Background()
 
 	body := "some body"
 	req, _ := NewRequest("POST", cst.scheme()+"://dns-is-faked.golang:"+port, strings.NewReader(body))
@@ -5148,15 +5138,6 @@ func testTransportEventTrace(t *testing.T, mode testMode, noHooks bool) {
 		GotConn:              func(ci httptrace.GotConnInfo) { logf("got conn: %+v", ci) },
 		GotFirstResponseByte: func() { logf("first response byte") },
 		PutIdleConn:          func(err error) { logf("PutIdleConn = %v", err) },
-		DNSStart:             func(e httptrace.DNSStartInfo) { logf("DNS start: %+v", e) },
-		DNSDone:              func(e httptrace.DNSDoneInfo) { logf("DNS done: %+v", e) },
-		ConnectStart:         func(network, addr string) { logf("ConnectStart: Connecting to %s %s ...", network, addr) },
-		ConnectDone: func(network, addr string, err error) {
-			if err != nil {
-				t.Errorf("ConnectDone: %v", err)
-			}
-			logf("ConnectDone: connected to %s %s = %v", network, addr, err)
-		},
 		WroteHeaderField: func(key string, value []string) {
 			logf("WroteHeaderField: %s: %v", key, value)
 		},
@@ -5339,70 +5320,6 @@ func testTransportEventTraceTLSVerify(t *testing.T, mode testMode) {
 	}
 }
 
-var isDNSHijacked = sync.OnceValue(func() bool {
-	addrs, _ := net.LookupHost("dns-should-not-resolve.golang")
-	return len(addrs) != 0
-})
-
-func skipIfDNSHijacked(t *testing.T) {
-	// Skip this test if the user is using a shady/ISP
-	// DNS server hijacking queries.
-	// See issues 16732, 16716.
-	if isDNSHijacked() {
-		t.Skip("skipping; test requires non-hijacking DNS server")
-	}
-}
-
-func TestTransportEventTraceRealDNS(t *testing.T) {
-	skipIfDNSHijacked(t)
-	defer afterTest(t)
-	tr := &Transport{}
-	defer tr.CloseIdleConnections()
-	c := &Client{Transport: tr}
-
-	var mu sync.Mutex // guards buf
-	var buf strings.Builder
-	logf := func(format string, args ...any) {
-		mu.Lock()
-		defer mu.Unlock()
-		fmt.Fprintf(&buf, format, args...)
-		buf.WriteByte('\n')
-	}
-
-	req, _ := NewRequest("GET", "http://dns-should-not-resolve.golang:80", nil)
-	trace := &httptrace.ClientTrace{
-		DNSStart:     func(e httptrace.DNSStartInfo) { logf("DNSStart: %+v", e) },
-		DNSDone:      func(e httptrace.DNSDoneInfo) { logf("DNSDone: %+v", e) },
-		ConnectStart: func(network, addr string) { logf("ConnectStart: %s %s", network, addr) },
-		ConnectDone:  func(network, addr string, err error) { logf("ConnectDone: %s %s %v", network, addr, err) },
-	}
-	req = req.WithContext(httptrace.WithClientTrace(context.Background(), trace))
-
-	resp, err := c.Do(req)
-	if err == nil {
-		resp.Body.Close()
-		t.Fatal("expected error during DNS lookup")
-	}
-
-	mu.Lock()
-	got := buf.String()
-	mu.Unlock()
-
-	wantSub := func(sub string) {
-		if !strings.Contains(got, sub) {
-			t.Errorf("expected substring %q in output.", sub)
-		}
-	}
-	wantSub("DNSStart: {Host:dns-should-not-resolve.golang}")
-	wantSub("DNSDone: {Addrs:[] Err:")
-	if strings.Contains(got, "ConnectStart") || strings.Contains(got, "ConnectDone") {
-		t.Errorf("should not see Connect events")
-	}
-	if t.Failed() {
-		t.Errorf("Output:\n%s", got)
-	}
-}
-
 // Issue 14353: port can only contain digits.
 func TestTransportRejectsAlphaPort(t *testing.T) {
 	res, err := Get("http://dummy.tld:123foo/bar")
@@ -5480,13 +5397,11 @@ func testTransportMaxIdleConns(t *testing.T, mode testMode) {
 	tr := c.Transport.(*Transport)
 	tr.MaxIdleConns = 4
 
-	ip, port, err := net.SplitHostPort(ts.Listener.Addr().String())
+	_, port, err := net.SplitHostPort(ts.Listener.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
-	ctx := context.WithValue(context.Background(), nettrace.LookupIPAltResolverKey{}, func(ctx context.Context, _, host string) ([]net.IPAddr, error) {
-		return []net.IPAddr{{IP: net.ParseIP(ip)}}, nil
-	})
+	ctx := context.Background()
 
 	hitHost := func(n int) {
 		req, _ := NewRequest("GET", fmt.Sprintf("http://host-%d.dns-is-faked.golang:"+port, n), nil)
@@ -5735,19 +5650,12 @@ func testTransportIDNA(t *testing.T, mode testMode) {
 		}
 	})
 
-	ip, port, err := net.SplitHostPort(cst.ts.Listener.Addr().String())
+	_, port, err := net.SplitHostPort(cst.ts.Listener.Addr().String())
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	// Install a fake DNS server.
-	ctx := context.WithValue(context.Background(), nettrace.LookupIPAltResolverKey{}, func(ctx context.Context, network, host string) ([]net.IPAddr, error) {
-		if host != punyDomain {
-			t.Errorf("got DNS host lookup for %q/%q; want %q", network, host, punyDomain)
-			return nil, nil
-		}
-		return []net.IPAddr{{IP: net.ParseIP(ip)}}, nil
-	})
+	ctx := context.Background()
 
 	req, _ := NewRequest("GET", cst.scheme()+"://"+uniDomain+":"+port, nil)
 	trace := &httptrace.ClientTrace{
@@ -5755,11 +5663,6 @@ func testTransportIDNA(t *testing.T, mode testMode) {
 			want := net.JoinHostPort(punyDomain, port)
 			if hostPort != want {
 				t.Errorf("getting conn for %q; want %q", hostPort, want)
-			}
-		},
-		DNSStart: func(e httptrace.DNSStartInfo) {
-			if e.Host != punyDomain {
-				t.Errorf("DNSStart Host = %q; want %q", e.Host, punyDomain)
 			}
 		},
 	}

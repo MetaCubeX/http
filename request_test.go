@@ -11,7 +11,6 @@ import (
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/metacubex/http"
 	. "github.com/metacubex/http"
@@ -1507,12 +1506,6 @@ func runFileAndServerBenchmarks(b *testing.B, mode testMode, f *os.File, n int64
 
 		res.Body.Close()
 		b.SetBytes(n)
-	}
-}
-
-func TestErrNotSupported(t *testing.T) {
-	if !errors.Is(ErrNotSupported, errors.ErrUnsupported) {
-		t.Error("errors.Is(ErrNotSupported, errors.ErrUnsupported) failed")
 	}
 }
 

@@ -75,9 +75,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"github.com/metacubex/http"
 	"html"
-	"internal/goexperiment"
 	"internal/profile"
 	"io"
 	"log"
@@ -90,6 +88,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/metacubex/http"
 )
 
 func init() {
@@ -368,12 +368,6 @@ var profileDescriptions = map[string]string{
 	"symbol":       "Maps given program counters to function names. Counters can be specified in a GET raw query or POST body, multiple counters are separated by '+'.",
 	"threadcreate": "Stack traces that led to the creation of new OS threads",
 	"trace":        "A trace of execution of the current program. You can specify the duration in the seconds GET parameter. After you get the trace file, use the go tool trace command to investigate the trace.",
-}
-
-func init() {
-	if goexperiment.GoroutineLeakProfile {
-		profileDescriptions["goroutineleak"] = "Stack traces of all leaked goroutines. Use debug=2 as a query parameter to export in the same format as an unrecovered panic."
-	}
 }
 
 type profileEntry struct {

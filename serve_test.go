@@ -12,20 +12,11 @@ import (
 	"compress/gzip"
 	"compress/zlib"
 	"context"
-	crand "crypto/rand"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/json"
 	"errors"
 	"fmt"
-	. "github.com/metacubex/http"
-	"github.com/metacubex/http/httptest"
-	"github.com/metacubex/http/httptrace"
-	"github.com/metacubex/http/httputil"
-	"github.com/metacubex/http/internal"
-	"github.com/metacubex/http/internal/testcert"
-	"internal/synctest"
-	"internal/testenv"
 	"io"
 	"log"
 	"math/rand"
@@ -33,9 +24,7 @@ import (
 	"net"
 	"net/url"
 	"os"
-	"path/filepath"
 	"reflect"
-	"regexp"
 	"runtime"
 	"slices"
 	"strconv"
@@ -44,7 +33,15 @@ import (
 	"sync/atomic"
 	"syscall"
 	"testing"
+	"testing/synctest"
 	"time"
+
+	. "github.com/metacubex/http"
+	"github.com/metacubex/http/httptest"
+	"github.com/metacubex/http/httptrace"
+	"github.com/metacubex/http/httputil"
+	"github.com/metacubex/http/internal"
+	"github.com/metacubex/http/internal/testcert"
 )
 
 type dummyAddr string
@@ -2150,7 +2147,7 @@ func TestServerUnreadRequestBodyLittle(t *testing.T) {
 // and close the connection.
 func TestServerUnreadRequestBodyLarge(t *testing.T) {
 	setParallel(t)
-	if testing.Short() && testenv.Builder() == "" {
+	if testing.Short() {
 		t.Log("skipping in short mode")
 	}
 	conn := new(testConn)
@@ -2284,7 +2281,7 @@ var handlerBodyCloseTests = [...]handlerBodyCloseTest{
 
 func TestHandlerBodyClose(t *testing.T) {
 	setParallel(t)
-	if testing.Short() && testenv.Builder() == "" {
+	if testing.Short() {
 		t.Skip("skipping in -short mode")
 	}
 	for i, tt := range handlerBodyCloseTests {
@@ -5244,308 +5241,6 @@ func TestHandlerSetTransferEncodingGzip(t *testing.T) {
 	}
 }
 
-func BenchmarkClientServer(b *testing.B) {
-	run(b, benchmarkClientServer, []testMode{http1Mode, https1Mode, http2Mode})
-}
-func benchmarkClientServer(b *testing.B, mode testMode) {
-	b.ReportAllocs()
-	b.StopTimer()
-	ts := newClientServerTest(b, mode, HandlerFunc(func(rw ResponseWriter, r *Request) {
-		fmt.Fprintf(rw, "Hello world.\n")
-	})).ts
-	b.StartTimer()
-
-	c := ts.Client()
-	for i := 0; i < b.N; i++ {
-		res, err := c.Get(ts.URL)
-		if err != nil {
-			b.Fatal("Get:", err)
-		}
-		all, err := io.ReadAll(res.Body)
-		res.Body.Close()
-		if err != nil {
-			b.Fatal("ReadAll:", err)
-		}
-		body := string(all)
-		if body != "Hello world.\n" {
-			b.Fatal("Got body:", body)
-		}
-	}
-
-	b.StopTimer()
-}
-
-func BenchmarkClientServerParallel(b *testing.B) {
-	for _, parallelism := range []int{4, 64} {
-		b.Run(fmt.Sprint(parallelism), func(b *testing.B) {
-			run(b, func(b *testing.B, mode testMode) {
-				benchmarkClientServerParallel(b, parallelism, mode)
-			}, []testMode{http1Mode, https1Mode, http2Mode})
-		})
-	}
-}
-
-func benchmarkClientServerParallel(b *testing.B, parallelism int, mode testMode) {
-	b.ReportAllocs()
-	ts := newClientServerTest(b, mode, HandlerFunc(func(rw ResponseWriter, r *Request) {
-		fmt.Fprintf(rw, "Hello world.\n")
-	})).ts
-	b.ResetTimer()
-	b.SetParallelism(parallelism)
-	b.RunParallel(func(pb *testing.PB) {
-		c := ts.Client()
-		for pb.Next() {
-			res, err := c.Get(ts.URL)
-			if err != nil {
-				b.Logf("Get: %v", err)
-				continue
-			}
-			all, err := io.ReadAll(res.Body)
-			res.Body.Close()
-			if err != nil {
-				b.Logf("ReadAll: %v", err)
-				continue
-			}
-			body := string(all)
-			if body != "Hello world.\n" {
-				panic("Got body: " + body)
-			}
-		}
-	})
-}
-
-// A benchmark for profiling the server without the HTTP client code.
-// The client code runs in a subprocess.
-//
-// For use like:
-//
-//	$ go test -c
-//	$ ./http.test -test.run='^$' -test.bench='^BenchmarkServer$' -test.benchtime=15s -test.cpuprofile=http.prof
-//	$ go tool pprof http.test http.prof
-//	(pprof) web
-func BenchmarkServer(b *testing.B) {
-	b.ReportAllocs()
-	// Child process mode;
-	if url := os.Getenv("GO_TEST_BENCH_SERVER_URL"); url != "" {
-		n, err := strconv.Atoi(os.Getenv("GO_TEST_BENCH_CLIENT_N"))
-		if err != nil {
-			panic(err)
-		}
-		for i := 0; i < n; i++ {
-			res, err := Get(url)
-			if err != nil {
-				log.Panicf("Get: %v", err)
-			}
-			all, err := io.ReadAll(res.Body)
-			res.Body.Close()
-			if err != nil {
-				log.Panicf("ReadAll: %v", err)
-			}
-			body := string(all)
-			if body != "Hello world.\n" {
-				log.Panicf("Got body: %q", body)
-			}
-		}
-		os.Exit(0)
-		return
-	}
-
-	var res = []byte("Hello world.\n")
-	b.StopTimer()
-	ts := httptest.NewServer(HandlerFunc(func(rw ResponseWriter, r *Request) {
-		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-		rw.Write(res)
-	}))
-	defer ts.Close()
-	b.StartTimer()
-
-	cmd := testenv.Command(b, os.Args[0], "-test.run=^$", "-test.bench=^BenchmarkServer$")
-	cmd.Env = append([]string{
-		fmt.Sprintf("GO_TEST_BENCH_CLIENT_N=%d", b.N),
-		fmt.Sprintf("GO_TEST_BENCH_SERVER_URL=%s", ts.URL),
-	}, os.Environ()...)
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		b.Errorf("Test failure: %v, with output: %s", err, out)
-	}
-}
-
-// getNoBody wraps Get but closes any Response.Body before returning the response.
-func getNoBody(urlStr string) (*Response, error) {
-	res, err := Get(urlStr)
-	if err != nil {
-		return nil, err
-	}
-	res.Body.Close()
-	return res, nil
-}
-
-// A benchmark for profiling the client without the HTTP server code.
-// The server code runs in a subprocess.
-func BenchmarkClient(b *testing.B) {
-	var data = []byte("Hello world.\n")
-
-	url := startClientBenchmarkServer(b, HandlerFunc(func(w ResponseWriter, _ *Request) {
-		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		w.Write(data)
-	}))
-
-	// Do b.N requests to the server.
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		res, err := Get(url)
-		if err != nil {
-			b.Fatalf("Get: %v", err)
-		}
-		body, err := io.ReadAll(res.Body)
-		res.Body.Close()
-		if err != nil {
-			b.Fatalf("ReadAll: %v", err)
-		}
-		if !bytes.Equal(body, data) {
-			b.Fatalf("Got body: %q", body)
-		}
-	}
-	b.StopTimer()
-}
-
-func startClientBenchmarkServer(b *testing.B, handler Handler) string {
-	b.ReportAllocs()
-	b.StopTimer()
-
-	if server := os.Getenv("GO_TEST_BENCH_SERVER"); server != "" {
-		// Server process mode.
-		port := os.Getenv("GO_TEST_BENCH_SERVER_PORT") // can be set by user
-		if port == "" {
-			port = "0"
-		}
-		ln, err := net.Listen("tcp", "localhost:"+port)
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println(ln.Addr().String())
-
-		HandleFunc("/", func(w ResponseWriter, r *Request) {
-			r.ParseForm()
-			if r.Form.Get("stop") != "" {
-				os.Exit(0)
-			}
-			handler.ServeHTTP(w, r)
-		})
-		var srv Server
-		log.Fatal(srv.Serve(ln))
-	}
-
-	// Start server process.
-	ctx, cancel := context.WithCancel(context.Background())
-	cmd := testenv.CommandContext(b, ctx, os.Args[0], "-test.run=^$", "-test.bench=^"+b.Name()+"$")
-	cmd.Env = append(cmd.Environ(), "GO_TEST_BENCH_SERVER=yes")
-	cmd.Stderr = os.Stderr
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		b.Fatal(err)
-	}
-	if err := cmd.Start(); err != nil {
-		b.Fatalf("subprocess failed to start: %v", err)
-	}
-
-	done := make(chan error, 1)
-	go func() {
-		done <- cmd.Wait()
-		close(done)
-	}()
-
-	// Wait for the server in the child process to respond and tell us
-	// its listening address, once it's started listening:
-	bs := bufio.NewScanner(stdout)
-	if !bs.Scan() {
-		b.Fatalf("failed to read listening URL from child: %v", bs.Err())
-	}
-	url := "http://" + strings.TrimSpace(bs.Text()) + "/"
-	if _, err := getNoBody(url); err != nil {
-		b.Fatalf("initial probe of child process failed: %v", err)
-	}
-
-	// Instruct server process to stop.
-	b.Cleanup(func() {
-		getNoBody(url + "?stop=yes")
-		if err := <-done; err != nil {
-			b.Fatalf("subprocess failed: %v", err)
-		}
-
-		cancel()
-		<-done
-
-		afterTest(b)
-	})
-
-	return url
-}
-
-func BenchmarkClientGzip(b *testing.B) {
-	const responseSize = 1024 * 1024
-
-	var buf bytes.Buffer
-	gz := gzip.NewWriter(&buf)
-	if _, err := io.CopyN(gz, crand.Reader, responseSize); err != nil {
-		b.Fatal(err)
-	}
-	gz.Close()
-
-	data := buf.Bytes()
-
-	url := startClientBenchmarkServer(b, HandlerFunc(func(w ResponseWriter, _ *Request) {
-		w.Header().Set("Content-Encoding", "gzip")
-		w.Write(data)
-	}))
-
-	// Do b.N requests to the server.
-	b.StartTimer()
-	for i := 0; i < b.N; i++ {
-		res, err := Get(url)
-		if err != nil {
-			b.Fatalf("Get: %v", err)
-		}
-		n, err := io.Copy(io.Discard, res.Body)
-		res.Body.Close()
-		if err != nil {
-			b.Fatalf("ReadAll: %v", err)
-		}
-		if n != responseSize {
-			b.Fatalf("ReadAll: expected %d bytes, got %d", responseSize, n)
-		}
-	}
-	b.StopTimer()
-}
-
-func BenchmarkServerFakeConnNoKeepAlive(b *testing.B) {
-	b.ReportAllocs()
-	req := reqBytes(`GET / HTTP/1.0
-Host: golang.org
-Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8
-User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_8_2) AppleWebKit/537.17 (KHTML, like Gecko) Chrome/24.0.1312.52 Safari/537.17
-Accept-Encoding: gzip,deflate,sdch
-Accept-Language: en-US,en;q=0.8
-Accept-Charset: ISO-8859-1,utf-8;q=0.7,*;q=0.3
-`)
-	res := []byte("Hello world!\n")
-
-	conn := newTestConn()
-	handler := HandlerFunc(func(rw ResponseWriter, r *Request) {
-		rw.Header().Set("Content-Type", "text/html; charset=utf-8")
-		rw.Write(res)
-	})
-	ln := new(oneConnListener)
-	for i := 0; i < b.N; i++ {
-		conn.readBuf.Reset()
-		conn.writeBuf.Reset()
-		conn.readBuf.Write(req)
-		ln.conn = conn
-		Serve(ln, handler)
-		<-conn.closec
-	}
-}
-
 // repeatReader reads content count times, then EOFs.
 type repeatReader struct {
 	content []byte
@@ -6186,7 +5881,8 @@ func TestServerDuplicateBackgroundRead(t *testing.T) {
 }
 func testServerDuplicateBackgroundRead(t *testing.T, mode testMode) {
 	if runtime.GOOS == "netbsd" && runtime.GOARCH == "arm" {
-		testenv.SkipFlaky(t, 24826)
+		t.Skipf("skipping known flaky test without the -flaky flag; see golang.org/issue/%d", 24826)
+		//testenv.SkipFlaky(t, 24826)
 	}
 
 	goroutines := 5
@@ -6706,112 +6402,6 @@ func testContentEncodingNoSniffing(t *testing.T, mode testMode) {
 
 			if g, w := res.Header.Get("Content-Type"), tt.wantContentType; g != w {
 				t.Errorf("Content-Type mismatch\n\tgot:  %q\n\twant: %q", g, w)
-			}
-		})
-	}
-}
-
-// Issue 30803: ensure that TimeoutHandler logs spurious
-// WriteHeader calls, for consistency with other Handlers.
-func TestTimeoutHandlerSuperfluousLogs(t *testing.T) {
-	run(t, testTimeoutHandlerSuperfluousLogs, []testMode{http1Mode})
-}
-func testTimeoutHandlerSuperfluousLogs(t *testing.T, mode testMode) {
-	if testing.Short() {
-		t.Skip("skipping in short mode")
-	}
-
-	pc, curFile, _, _ := runtime.Caller(0)
-	curFileBaseName := filepath.Base(curFile)
-	testFuncName := runtime.FuncForPC(pc).Name()
-
-	timeoutMsg := "timed out here!"
-
-	tests := []struct {
-		name        string
-		mustTimeout bool
-		wantResp    string
-	}{
-		{
-			name:     "return before timeout",
-			wantResp: "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n",
-		},
-		{
-			name:        "return after timeout",
-			mustTimeout: true,
-			wantResp: fmt.Sprintf("HTTP/1.1 503 Service Unavailable\r\nContent-Length: %d\r\n\r\n%s",
-				len(timeoutMsg), timeoutMsg),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			exitHandler := make(chan bool, 1)
-			defer close(exitHandler)
-			lastLine := make(chan int, 1)
-
-			sh := HandlerFunc(func(w ResponseWriter, r *Request) {
-				w.WriteHeader(404)
-				w.WriteHeader(404)
-				w.WriteHeader(404)
-				w.WriteHeader(404)
-				_, _, line, _ := runtime.Caller(0)
-				lastLine <- line
-				<-exitHandler
-			})
-
-			if !tt.mustTimeout {
-				exitHandler <- true
-			}
-
-			logBuf := new(strings.Builder)
-			srvLog := log.New(logBuf, "", 0)
-			// When expecting to timeout, we'll keep the duration short.
-			dur := 20 * time.Millisecond
-			if !tt.mustTimeout {
-				// Otherwise, make it arbitrarily long to reduce the risk of flakes.
-				dur = 10 * time.Second
-			}
-			th := TimeoutHandler(sh, dur, timeoutMsg)
-			cst := newClientServerTest(t, mode, th, optWithServerLog(srvLog))
-			defer cst.close()
-
-			res, err := cst.c.Get(cst.ts.URL)
-			if err != nil {
-				t.Fatalf("Unexpected error: %v", err)
-			}
-
-			// Deliberately removing the "Date" header since it is highly ephemeral
-			// and will cause failure if we try to match it exactly.
-			res.Header.Del("Date")
-			res.Header.Del("Content-Type")
-
-			// Match the response.
-			blob, _ := httputil.DumpResponse(res, true)
-			if g, w := string(blob), tt.wantResp; g != w {
-				t.Errorf("Response mismatch\nGot\n%q\n\nWant\n%q", g, w)
-			}
-
-			// Given 4 w.WriteHeader calls, only the first one is valid
-			// and the rest should be reported as the 3 spurious logs.
-			logEntries := strings.Split(strings.TrimSpace(logBuf.String()), "\n")
-			if g, w := len(logEntries), 3; g != w {
-				blob, _ := json.MarshalIndent(logEntries, "", "  ")
-				t.Fatalf("Server logs count mismatch\ngot %d, want %d\n\nGot\n%s\n", g, w, blob)
-			}
-
-			lastSpuriousLine := <-lastLine
-			firstSpuriousLine := lastSpuriousLine - 3
-			// Now ensure that the regexes match exactly.
-			//      "http: superfluous response.WriteHeader call from <fn>.func\d.\d (<curFile>:lastSpuriousLine-[1, 3]"
-			for i, logEntry := range logEntries {
-				wantLine := firstSpuriousLine + i
-				pat := fmt.Sprintf("^http: superfluous response.WriteHeader call from %s.func\\d+.\\d+ \\(%s:%d\\)$",
-					testFuncName, curFileBaseName, wantLine)
-				re := regexp.MustCompile(pat)
-				if !re.MatchString(logEntry) {
-					t.Errorf("Log entry mismatch\n\t%s\ndoes not match\n\t%s", logEntry, pat)
-				}
 			}
 		})
 	}

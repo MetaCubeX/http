@@ -13,10 +13,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	. "github.com/metacubex/http"
-	"github.com/metacubex/http/cookiejar"
-	"github.com/metacubex/http/httptest"
-	"internal/testenv"
 	"io"
 	"log"
 	"net"
@@ -29,6 +25,10 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	. "github.com/metacubex/http"
+	"github.com/metacubex/http/cookiejar"
+	"github.com/metacubex/http/httptest"
 )
 
 var robotsTxtHandler = HandlerFunc(func(w ResponseWriter, r *Request) {
@@ -1258,7 +1258,8 @@ func testClientTimeout(t *testing.T, mode testMode) {
 				continue
 			}
 			if runtime.GOOS == "windows" && runtime.GOARCH == "arm64" {
-				testenv.SkipFlaky(t, 43120)
+				t.Skipf("skipping known flaky test without the -flaky flag; see golang.org/issue/%d", 43120)
+				//testenv.SkipFlaky(t, 43120)
 			}
 			t.Fatal(err)
 		}
@@ -1287,7 +1288,8 @@ func testClientTimeout(t *testing.T, mode testMode) {
 		}
 		if got := ne.Error(); !strings.Contains(got, "(Client.Timeout") {
 			if runtime.GOOS == "windows" && runtime.GOARCH == "arm64" {
-				testenv.SkipFlaky(t, 43120)
+				t.Skipf("skipping known flaky test without the -flaky flag; see golang.org/issue/%d", 43120)
+				//testenv.SkipFlaky(t, 43120)
 			}
 			t.Errorf("error string = %q; missing timeout substring", got)
 		}
@@ -1333,7 +1335,8 @@ func testClientTimeout_Headers(t *testing.T, mode testMode) {
 	}
 	if got := ne.Error(); !strings.Contains(got, "Client.Timeout exceeded") {
 		if runtime.GOOS == "windows" && runtime.GOARCH == "arm64" {
-			testenv.SkipFlaky(t, 43120)
+			t.Skipf("skipping known flaky test without the -flaky flag; see golang.org/issue/%d", 43120)
+			//testenv.SkipFlaky(t, 43120)
 		}
 		t.Errorf("error string = %q; missing timeout substring", got)
 	}

@@ -8,8 +8,6 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	"github.com/metacubex/http"
-	"github.com/metacubex/http/httptest"
 	"internal/profile"
 	"internal/testenv"
 	"io"
@@ -21,6 +19,9 @@ import (
 	"sync/atomic"
 	"testing"
 	"time"
+
+	"github.com/metacubex/http"
+	"github.com/metacubex/http/httptest"
 )
 
 // TestDescriptions checks that the profile names under runtime/pprof package
@@ -156,7 +157,8 @@ func mutexHog(duration time.Duration, hogger func(mu1, mu2 *sync.Mutex, start ti
 
 func TestDeltaProfile(t *testing.T) {
 	if strings.HasPrefix(runtime.GOARCH, "arm") {
-		testenv.SkipFlaky(t, 50218)
+		t.Skipf("skipping known flaky test without the -flaky flag; see golang.org/issue/%d", 50218)
+		//testenv.SkipFlaky(t, 50218)
 	}
 
 	rate := runtime.SetMutexProfileFraction(1)

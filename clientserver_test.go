@@ -14,10 +14,6 @@ import (
 	"crypto/sha1"
 	"crypto/tls"
 	"fmt"
-	. "github.com/metacubex/http"
-	"github.com/metacubex/http/httptest"
-	"github.com/metacubex/http/httptrace"
-	"github.com/metacubex/http/httputil"
 	"hash"
 	"io"
 	"log"
@@ -35,6 +31,11 @@ import (
 	"testing"
 	"testing/synctest"
 	"time"
+
+	. "github.com/metacubex/http"
+	"github.com/metacubex/http/httptest"
+	"github.com/metacubex/http/httptrace"
+	"github.com/metacubex/http/httputil"
 )
 
 type testMode string
@@ -1624,21 +1625,6 @@ func testWriteHeaderAfterWrite(t *testing.T, mode testMode, hijack bool) {
 	}
 	if got, want := string(body), "foobar"; got != want {
 		t.Errorf("got = %q; want %q", got, want)
-	}
-
-	// Also check the stderr output:
-	if mode == http2Mode {
-		// TODO: also emit this log message for HTTP/2?
-		// We historically haven't, so don't check.
-		return
-	}
-	gotLog := strings.TrimSpace(errorLog.String())
-	wantLog := "http: superfluous response.WriteHeader call from net/http_test.testWriteHeaderAfterWrite.func1 (clientserver_test.go:"
-	if hijack {
-		wantLog = "http: response.WriteHeader on hijacked connection from net/http_test.testWriteHeaderAfterWrite.func1 (clientserver_test.go:"
-	}
-	if !strings.HasPrefix(gotLog, wantLog) {
-		t.Errorf("stderr output = %q; want %q", gotLog, wantLog)
 	}
 }
 

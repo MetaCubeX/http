@@ -1244,7 +1244,7 @@ func testTransportGCRequest(t *testing.T, mode testMode, body bool) {
 	(func() {
 		body := strings.NewReader("some body")
 		req, _ := NewRequest("POST", cst.ts.URL, body)
-		runtime.AddCleanup(req, func(ch chan struct{}) { close(ch) }, didGC)
+		runtime.SetFinalizer(req, func(*Request) { close(didGC) })
 		res, err := cst.c.Do(req)
 		if err != nil {
 			t.Fatal(err)

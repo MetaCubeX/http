@@ -112,8 +112,8 @@ func (w *mockTransferWriter) Write(p []byte) (int, error) {
 }
 
 func TestTransferWriterWriteBodyReaderTypes(t *testing.T) {
-	fileType := reflect.TypeFor[*os.File]()
-	bufferType := reflect.TypeFor[*bytes.Buffer]()
+	fileType := reflect.TypeOf(&os.File{})
+	bufferType := reflect.TypeOf(&bytes.Buffer{})
 
 	nBytes := int64(1 << 10)
 	newFileFunc := func() (r io.Reader, done func(), err error) {

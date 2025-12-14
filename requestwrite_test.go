@@ -15,7 +15,6 @@ import (
 	"strings"
 	"testing"
 	"testing/iotest"
-	"testing/synctest"
 	"time"
 )
 
@@ -668,11 +667,7 @@ func TestRequestWrite(t *testing.T) {
 func TestRequestWriteTransport(t *testing.T) {
 	t.Parallel()
 
-	// Run this test in a synctest bubble, since it relies on the transport
-	// successfully probing the request body within 200ms
-	// (see transferWriter.probeRequestBody).
-	// This occasionally flakes on slow builders (#52575) if we don't use a fake clock.
-	synctest.Test(t, testRequestWriteTransport)
+	testRequestWriteTransport(t)
 }
 func testRequestWriteTransport(t *testing.T) {
 	matchSubstr := func(substr string) func(string) error {

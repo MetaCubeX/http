@@ -29,7 +29,6 @@ import (
 	"sync"
 	"sync/atomic"
 	"testing"
-	"testing/synctest"
 	"time"
 
 	. "github.com/metacubex/http"
@@ -111,9 +110,7 @@ func run[T TBRun[T]](t T, f func(t T, mode testMode), opts ...any) {
 // The TB passed to f arranges for cleanup functions to be run in the synctest bubble.
 func runSynctest(t *testing.T, f func(t *testing.T, mode testMode), opts ...any) {
 	run(t, func(t *testing.T, mode testMode) {
-		synctest.Test(t, func(t *testing.T) {
-			f(t, mode)
-		})
+		f(t, mode)
 	}, opts...)
 }
 

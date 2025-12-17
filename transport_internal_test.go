@@ -9,9 +9,9 @@ package http
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"errors"
 	"github.com/metacubex/http/internal/testcert"
+	"github.com/metacubex/tls"
 	"io"
 	"net"
 	"strings"

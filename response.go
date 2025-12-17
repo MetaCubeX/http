@@ -9,9 +9,9 @@ package http
 import (
 	"bufio"
 	"bytes"
-	"crypto/tls"
 	"errors"
 	"fmt"
+	"github.com/metacubex/tls"
 	"io"
 	"net/textproto"
 	"net/url"

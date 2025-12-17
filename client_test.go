@@ -9,10 +9,10 @@ package http_test
 import (
 	"bytes"
 	"context"
-	"crypto/tls"
 	"encoding/base64"
 	"errors"
 	"fmt"
+	"github.com/metacubex/tls"
 	"io"
 	"log"
 	"net"

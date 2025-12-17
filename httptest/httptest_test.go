@@ -6,13 +6,14 @@ package httptest
 
 import (
 	"context"
-	"crypto/tls"
-	"github.com/metacubex/http"
 	"io"
 	"net/url"
 	"reflect"
 	"strings"
 	"testing"
+
+	"github.com/metacubex/http"
+	"github.com/metacubex/tls"
 )
 
 func TestNewRequest(t *testing.T) {

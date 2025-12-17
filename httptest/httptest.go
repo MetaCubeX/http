@@ -9,10 +9,11 @@ import (
 	"bufio"
 	"bytes"
 	"context"
-	"crypto/tls"
-	"github.com/metacubex/http"
 	"io"
 	"strings"
+
+	"github.com/metacubex/http"
+	"github.com/metacubex/tls"
 )
 
 // NewRequest wraps NewRequestWithContext using context.Background.

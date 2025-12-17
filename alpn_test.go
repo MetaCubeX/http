@@ -7,14 +7,15 @@ package http_test
 import (
 	"bufio"
 	"bytes"
-	"crypto/tls"
 	"crypto/x509"
 	"fmt"
-	. "github.com/metacubex/http"
-	"github.com/metacubex/http/httptest"
 	"io"
 	"strings"
 	"testing"
+
+	. "github.com/metacubex/http"
+	"github.com/metacubex/http/httptest"
+	"github.com/metacubex/tls"
 )
 
 func TestNextProtoUpgrade(t *testing.T) {

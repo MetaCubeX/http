@@ -8,12 +8,12 @@ package httptest
 
 import (
 	"context"
-	"crypto/tls"
 	"crypto/x509"
 	"flag"
 	"fmt"
 	"github.com/metacubex/http"
 	"github.com/metacubex/http/internal/testcert"
+	"github.com/metacubex/tls"
 	"log"
 	"net"
 	"os"

@@ -6,8 +6,8 @@ package h2c
 
 import (
 	"context"
-	"crypto/tls"
 	"fmt"
+	"github.com/metacubex/tls"
 	"io"
 	"log"
 	"net"

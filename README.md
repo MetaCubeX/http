@@ -5,3 +5,14 @@ backport net/http for go1.20+
 
 export `net/http` from:
 https://github.com/golang/go/tree/a70addd3b31ccb685f48867e24c6c2b4dc364a11/src/net/http
+
+special modify:
+- add TLSConn interface and not depend on *tls.Conn type
+    ```Go
+    type TLSConn interface {
+        net.Conn
+        NetConn() net.Conn
+        HandshakeContext(ctx context.Context) error
+        ConnectionState() tls.ConnectionState
+    }
+    ```

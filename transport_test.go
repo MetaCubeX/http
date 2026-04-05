@@ -4650,7 +4650,7 @@ func TestTransportAutomaticHTTP2_DefaultTransport(t *testing.T) {
 
 func TestTransportAutomaticHTTP2_TLSNextProto(t *testing.T) {
 	testTransportAutoHTTP(t, &Transport{
-		TLSNextProto: make(map[string]func(string, *tls.Conn) RoundTripper),
+		TLSNextProto: make(map[string]func(string, TLSConn) RoundTripper),
 	}, false)
 }
 
@@ -4759,7 +4759,7 @@ func TestNoCrashReturningTransportAltConn(t *testing.T) {
 			t.Error(err)
 			return
 		}
-		if err := sc.(*tls.Conn).Handshake(); err != nil {
+		if err := sc.(TLSConn).HandshakeContext(context.Background()); err != nil {
 			t.Error(err)
 			return
 		}
@@ -4778,8 +4778,8 @@ func TestNoCrashReturningTransportAltConn(t *testing.T) {
 
 	tr := &Transport{
 		DisableKeepAlives: true,
-		TLSNextProto: map[string]func(string, *tls.Conn) RoundTripper{
-			"foo": func(authority string, c *tls.Conn) RoundTripper {
+		TLSNextProto: map[string]func(string, TLSConn) RoundTripper{
+			"foo": func(authority string, c TLSConn) RoundTripper {
 				madeRoundTripper <- true
 				return funcRoundTripper(func() {
 					t.Error("foo RoundTripper should not be called")
@@ -5997,8 +5997,8 @@ func TestTransportClone(t *testing.T) {
 		ForceAttemptHTTP2:      true,
 		HTTP2:                  &HTTP2Config{MaxConcurrentStreams: 1},
 		Protocols:              &Protocols{},
-		TLSNextProto: map[string]func(authority string, c *tls.Conn) RoundTripper{
-			"foo": func(authority string, c *tls.Conn) RoundTripper { panic("") },
+		TLSNextProto: map[string]func(authority string, c TLSConn) RoundTripper{
+			"foo": func(authority string, c TLSConn) RoundTripper { panic("") },
 		},
 		ReadBufferSize:  1,
 		WriteBufferSize: 1,
@@ -6877,7 +6877,7 @@ func TestTransportServerProtocols(t *testing.T) {
 			tr.Protocols = &Protocols{}
 			tr.Protocols.SetHTTP1(true)
 			tr.Protocols.SetHTTP2(true)
-			tr.TLSNextProto = map[string]func(string, *tls.Conn) RoundTripper{}
+			tr.TLSNextProto = map[string]func(string, TLSConn) RoundTripper{}
 		},
 		want: "HTTP/2.0",
 	}, {
@@ -6886,7 +6886,7 @@ func TestTransportServerProtocols(t *testing.T) {
 		server: func(srv *Server) {
 			// Disable HTTP/2 on the server with TLSNextProto,
 			// use default Protocols value.
-			srv.TLSNextProto = map[string]func(*Server, *tls.Conn, Handler){}
+			srv.TLSNextProto = map[string]func(*Server, TLSConn, Handler){}
 		},
 		want: "HTTP/1.1",
 	}, {
@@ -6898,7 +6898,7 @@ func TestTransportServerProtocols(t *testing.T) {
 			srv.Protocols = &Protocols{}
 			srv.Protocols.SetHTTP1(true)
 			srv.Protocols.SetHTTP2(true)
-			srv.TLSNextProto = map[string]func(*Server, *tls.Conn, Handler){}
+			srv.TLSNextProto = map[string]func(*Server, TLSConn, Handler){}
 		},
 		want: "HTTP/2.0",
 	}, {

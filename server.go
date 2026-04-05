@@ -263,7 +263,7 @@ type conn struct {
 	// rwc is the underlying network connection.
 	// This is never wrapped by other types and is the value given out
 	// to [Hijacker] callers. It is usually of type *net.TCPConn or
-	// *tls.Conn.
+	// TLSConn.
 	rwc net.Conn
 
 	// remoteAddr is rwc.RemoteAddr().String(). It is not populated synchronously
@@ -1922,7 +1922,7 @@ func (c *conn) serve(ctx context.Context) {
 		}
 	}()
 
-	if tlsConn, ok := c.rwc.(*tls.Conn); ok {
+	if tlsConn, ok := c.rwc.(TLSConn); ok {
 		tlsTO := c.server.tlsHandshakeTimeout()
 		if tlsTO > 0 {
 			dl := time.Now().Add(tlsTO)
@@ -1966,7 +1966,7 @@ func (c *conn) serve(ctx context.Context) {
 
 	// HTTP/1.x from here on.
 
-	// Set Request.TLS if the conn is not a *tls.Conn, but implements ConnectionState.
+	// Set Request.TLS if the conn is not a TLSConn, but implements ConnectionState.
 	if c.tlsState == nil {
 		if tc, ok := c.rwc.(connectionStater); ok {
 			c.tlsState = new(tls.ConnectionState)
@@ -2138,7 +2138,7 @@ func (h unencryptedHTTP2Request) ServeHTTP(rw ResponseWriter, req *Request) {
 }
 
 // unencryptedNetConnInTLSConn is used to pass an unencrypted net.Conn to
-// functions that only accept a *tls.Conn.
+// functions that only accept a TLSConn.
 type unencryptedNetConnInTLSConn struct {
 	net.Conn // panic on all net.Conn methods
 	conn     net.Conn
@@ -2148,7 +2148,7 @@ func (c unencryptedNetConnInTLSConn) UnencryptedNetConn() net.Conn {
 	return c.conn
 }
 
-func unencryptedTLSConn(c net.Conn) *tls.Conn {
+func unencryptedTLSConn(c net.Conn) TLSConn {
 	return tls.Client(unencryptedNetConnInTLSConn{conn: c}, nil)
 }
 
@@ -2914,7 +2914,7 @@ func (mux *ServeMux) registerErr(patstr string, handler Handler) error {
 //
 // The handler is typically nil, in which case [DefaultServeMux] is used.
 //
-// HTTP/2 support is only enabled if the Listener returns [*tls.Conn]
+// HTTP/2 support is only enabled if the Listener returns [TLSConn]
 // connections and they were configured with "h2" in the TLS
 // Config.NextProtos.
 //
@@ -3015,7 +3015,7 @@ type Server struct {
 	//
 	// Historically, TLSNextProto was used to disable HTTP/2 support.
 	// The Server.Protocols field now provides a simpler way to do this.
-	TLSNextProto map[string]func(*Server, *tls.Conn, Handler)
+	TLSNextProto map[string]func(*Server, TLSConn, Handler)
 
 	// ConnState specifies an optional callback function that is
 	// called when a client connection changes state. See the
@@ -3353,7 +3353,7 @@ func (s *Server) shouldConfigureHTTP2ForServe() bool {
 		// didn't set it on the http.Server, but did pass it to
 		// tls.NewListener and passed that listener to Serve.
 		// So we should configure HTTP/2 (to set up s.TLSNextProto)
-		// in case the listener returns an "h2" *tls.Conn.
+		// in case the listener returns an "h2" TLSConn.
 		return true
 	}
 	if s.protocols().UnencryptedHTTP2() {
@@ -3377,7 +3377,7 @@ var ErrServerClosed = errors.New("http: Server closed")
 // new service goroutine for each. The service goroutines read requests and
 // then call s.Handler to reply to them.
 //
-// HTTP/2 support is only enabled if the Listener returns [*tls.Conn]
+// HTTP/2 support is only enabled if the Listener returns [TLSConn]
 // connections and they were configured with "h2" in the TLS
 // Config.NextProtos.
 //
@@ -3929,7 +3929,7 @@ func (globalOptionsHandler) ServeHTTP(w ResponseWriter, r *Request) {
 // Requests come from ALPN protocol handlers.
 type initALPNRequest struct {
 	ctx context.Context
-	c   *tls.Conn
+	c   TLSConn
 	h   serverHandler
 }
 

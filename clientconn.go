@@ -36,7 +36,7 @@ type ClientConn struct {
 //
 // Transport.TLSNextProto["h2"] contains a function which appears to do this,
 // but for historical reasons it does not: The TLSNextProto function adds a
-// *tls.Conn to the http2.Transport's connection pool and returns a RoundTripper
+// TLSConn to the http2.Transport's connection pool and returns a RoundTripper
 // which is backed by that connection pool. NewClientConn needs a way to get a
 // single client connection out of the http2 package.
 //

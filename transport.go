@@ -252,7 +252,7 @@ type Transport struct {
 	//
 	// Historically, TLSNextProto was used to disable HTTP/2 support.
 	// The Transport.Protocols field now provides a simpler way to do this.
-	TLSNextProto map[string]func(authority string, c *tls.Conn) RoundTripper
+	TLSNextProto map[string]func(authority string, c TLSConn) RoundTripper
 
 	// ProxyConnectHeader optionally specifies headers to send to
 	// proxies during CONNECT requests.
@@ -373,7 +373,7 @@ func (t *Transport) Clone() *Transport {
 	if !t.tlsNextProtoWasNil {
 		npm := maps.Clone(t.TLSNextProto)
 		if npm == nil {
-			npm = make(map[string]func(authority string, c *tls.Conn) RoundTripper)
+			npm = make(map[string]func(authority string, c TLSConn) RoundTripper)
 		}
 		t2.TLSNextProto = npm
 	}
@@ -1785,7 +1785,7 @@ func (t *Transport) dialConn(ctx context.Context, cm connectMethod, isClientConn
 		if err != nil {
 			return nil, wrapErr(err)
 		}
-		if tc, ok := pconn.conn.(*tls.Conn); ok {
+		if tc, ok := pconn.conn.(TLSConn); ok {
 			// Handshake here, in case DialTLS didn't. TLSNextProto below
 			// depends on it for knowing the connection state.
 			if trace != nil && trace.TLSHandshakeStart != nil {
@@ -1972,7 +1972,7 @@ func (t *Transport) dialConn(ctx context.Context, cm connectMethod, isClientConn
 
 	if s := pconn.tlsState; s != nil && s.NegotiatedProtocolIsMutual && s.NegotiatedProtocol != "" {
 		if next, ok := t.TLSNextProto[s.NegotiatedProtocol]; ok {
-			alt := next(cm.targetAddr, pconn.conn.(*tls.Conn))
+			alt := next(cm.targetAddr, pconn.conn.(TLSConn))
 			if e, ok := alt.(erringRoundTripper); ok {
 				// pconn.conn was closed by next (http2configureTransports.upgradeFn).
 				return nil, e.RoundTripErr()

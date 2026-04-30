@@ -2218,7 +2218,7 @@ func (rw *testResponseWriter) Hijack() (net.Conn, *bufio.ReadWriter, error) {
 	if rw.hijack != nil {
 		return rw.hijack()
 	}
-	return nil, nil, errors.ErrUnsupported
+	return nil, nil, errors.New("unsupported operation")
 }
 
 type testReadWriteCloser struct {

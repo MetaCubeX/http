@@ -925,10 +925,17 @@ func (c switchProtocolCopier) copyToBackend(errc chan<- error) {
 	errc <- errCopyDone
 }
 
+// Keep this in sync with net/url.
+const defaultMaxParams = 10000
+
 func cleanQueryParams(s string) string {
 	reencode := func(s string) string {
 		v, _ := url.ParseQuery(s)
 		return v.Encode()
+	}
+	if numParams := strings.Count(s, "&") + 1; numParams > defaultMaxParams {
+		// Too many query parameters.
+		return reencode(s)
 	}
 	for i := 0; i < len(s); {
 		switch s[i] {

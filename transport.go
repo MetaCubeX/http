@@ -1949,7 +1949,20 @@ func (t *Transport) dialConn(ctx context.Context, cm connectMethod, isClientConn
 		if !ok {
 			return nil, errors.New("http: HTTP/2 implementation does not support NewClientConn (update golang.org/x/net?)")
 		}
-		alt, err := h2.NewClientConn(pconn.conn, internalStateHook)
+		if ctx.Done() != nil {
+			// Close the connection if ctx is canceled before the function returns.
+			stop := contextAfterFunc(ctx, func() {
+				_ = pconn.conn.Close()
+			})
+			defer func() {
+				if !stop() {
+					// Return context error to user.
+					err = ctx.Err()
+				}
+			}()
+		}
+		var alt RoundTripper
+		alt, err = h2.NewClientConn(pconn.conn, internalStateHook)
 		if err != nil {
 			pconn.conn.Close()
 			return nil, err

@@ -16,3 +16,9 @@ special modify:
         ConnectionState() tls.ConnectionState
     }
     ```
+- add CloseHttp2Connections interface to close all http2 underlay connections
+    ```Go
+    type CloseHttp2Connections interface {
+        CloseHttp2Connections()
+    }
+    ```

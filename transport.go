@@ -1950,8 +1950,9 @@ func (t *Transport) dialConn(ctx context.Context, cm connectMethod, isClientConn
 		}
 		if ctx.Done() != nil {
 			// Close the connection if ctx is canceled before the function returns.
+			nc := pconn.conn
 			stop := contextAfterFunc(ctx, func() {
-				_ = pconn.conn.Close()
+				_ = nc.Close()
 			})
 			defer func() {
 				if !stop() {

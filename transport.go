@@ -1950,9 +1950,6 @@ func (t *Transport) dialConn(ctx context.Context, cm connectMethod, isClientConn
 		}
 		if ctx.Done() != nil {
 			// Close the connection if ctx is canceled before the function returns.
-			// Capture the conn in a local: pconn is a named return value, so the
-			// AfterFunc goroutine would otherwise race with (and observe the nil
-			// written by) the "return nil, err" paths below.
 			nc := pconn.conn
 			stop := contextAfterFunc(ctx, func() {
 				_ = nc.Close()

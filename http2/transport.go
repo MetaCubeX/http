@@ -2098,7 +2098,9 @@ func (cc *ClientConn) forgetStreamID(id uint32) {
 		panic("forgetting unknown stream id")
 	}
 	cc.lastActive = time.Now()
-	if len(cc.streams) == 0 && cc.idleTimer != nil {
+	// Don't re-arm the idle timer of a closed connection: its callback
+	// keeps cc reachable until the idle timeout fires.
+	if len(cc.streams) == 0 && cc.idleTimer != nil && !cc.closed {
 		cc.idleTimer.Reset(cc.idleTimeout)
 		cc.lastIdle = time.Now()
 	}
@@ -2181,6 +2183,12 @@ func (rl *clientConnReadLoop) cleanup() {
 		err = io.ErrUnexpectedEOF
 	}
 	cc.closed = true
+	// The Stop above runs without cc.mu, so a stream forgotten before closed
+	// was set may have re-armed the idle timer. Stop it again; now that
+	// closed is set, forgetStreamID leaves it alone.
+	if cc.idleTimer != nil {
+		cc.idleTimer.Stop()
+	}
 
 	// If the connection has never been used, and has been open for only a short time,
 	// leave it in the connection pool for a little while.
@@ -2257,6 +2265,8 @@ func (rl *clientConnReadLoop) run() error {
 	var t *time.Timer
 	if readIdleTimeout != 0 {
 		t = time.AfterFunc(readIdleTimeout, cc.healthCheck)
+		// The health check holds cc; don't let it outlive the read loop.
+		defer t.Stop()
 	}
 	for {
 		f, err := cc.fr.ReadFrame()
